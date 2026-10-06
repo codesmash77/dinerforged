@@ -7,7 +7,7 @@ interface Message {
   id: string;
   sender: 'user' | 'chef';
   text: string;
-  timestamp: string;
+  timestamp: string; 
 }
 
 export const AIChefPage: React.FC = () => {
