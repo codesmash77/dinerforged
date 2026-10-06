@@ -4,10 +4,11 @@
   functions = "netlify/functions"
 
 [dev]
-  command = "npm run dev"
+  command = "vite"
   port = 8888
   targetPort = 5173
   publish = "dist"
+  autoLaunch = true
 
 [[redirects]]
   from = "/api/*"
@@ -18,10 +19,3 @@
   from = "/*"
   to = "/index.html"
   status = 200
-
-[[headers]]
-  for = "/*"
-  [headers.values]
-    X-Frame-Options = "DENY"
-    X-XSS-Protection = "1; mode=block"
-    X-Content-Type-Options = "nosniff"

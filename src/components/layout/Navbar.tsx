@@ -1,12 +1,14 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { ChefHat, BookOpen, Calendar, ShoppingCart, Sparkles, Sun, Moon, WifiOff, UtensilsCrossed } from 'lucide-react';
+import { ChefHat, BookOpen, Calendar, ShoppingCart, Sparkles, Sun, Moon, WifiOff, UtensilsCrossed, Download } from 'lucide-react';
 import { useTheme } from '../../hooks/useTheme';
 import { useOnlineStatus } from '../../hooks/useOnlineStatus';
+import { usePWAInstall } from '../../hooks/usePWAInstall';
 
 export const Navbar: React.FC = () => {
   const { darkMode, toggleDarkMode } = useTheme();
   const isOnline = useOnlineStatus();
+  const { isInstallable, installPWA } = usePWAInstall();
 
   const navLinks = [
     { to: '/', label: 'Recipes', icon: UtensilsCrossed },
@@ -46,15 +48,29 @@ export const Navbar: React.FC = () => {
           ))}
         </nav>
 
-        {/* Status Indicators & Dark Mode Switch */}
-        <div className="flex items-center gap-3">
+        {/* Status Indicators, Install Widget & Theme Switch */}
+        <div className="flex items-center gap-2 sm:gap-3">
           {!isOnline && (
             <div className="flex items-center gap-1.5 rounded-full bg-amber-500/10 px-2.5 py-1 text-xs font-semibold text-amber-600 dark:text-amber-400">
               <WifiOff className="h-3.5 w-3.5" />
-              <span>Offline Mode</span>
+              <span className="hidden sm:inline">Offline Mode</span>
             </div>
           )}
 
+          {/* PWA Download / Install Widget Button */}
+          {isInstallable && (
+            <button
+              onClick={installPWA}
+              title="Install Dinerforged App"
+              aria-label="Install App"
+              className="flex items-center gap-1.5 rounded-lg bg-culinary-500/10 px-3 py-1.5 text-xs font-bold text-culinary-600 hover:bg-culinary-500/20 dark:bg-culinary-500/20 dark:text-culinary-400 dark:hover:bg-culinary-500/30 transition-colors"
+            >
+              <Download className="h-4 w-4 text-culinary-500" />
+              <span className="hidden sm:inline">Install App</span>
+            </button>
+          )}
+
+          {/* Dark Mode Switch */}
           <button
             onClick={toggleDarkMode}
             aria-label="Toggle Dark Mode"
