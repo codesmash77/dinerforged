@@ -2,48 +2,71 @@ import type { Handler } from '@netlify/functions';
 
 export const handler: Handler = async (event) => {
   if (event.httpMethod !== 'POST') {
-    return { statusCode: 405, body: JSON.stringify({ error: 'Method Not Allowed' }) };
+    return {
+      statusCode: 405,
+      body: JSON.stringify({ error: 'Method Not Allowed' }),
+    };
+  }
+
+  const apiKey = process.env.OPENROUTER_API_KEY;
+
+  if (!apiKey) {
+    console.error('[AI Chef] OPENROUTER_API_KEY environment variable is not defined.');
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ error: 'OPENROUTER_API_KEY is missing on Netlify.' }),
+    };
   }
 
   try {
-    const { prompt, context } = JSON.parse(event.body || '{}');
-
-    if (!prompt) {
-      return { statusCode: 400, body: JSON.stringify({ error: 'Prompt is required' }) };
-    }
+    const { prompt } = JSON.parse(event.body || '{}');
 
     const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
+        'Authorization': `Bearer ${apiKey}`,
         'HTTP-Referer': 'https://dinerforged.netlify.app',
-        'X-Title': 'Dinerforged Culinary OS',
+        'X-Title': 'Dinerforged PWA',
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'meta-llama/llama-3.3-70b-versatile:free',
+        model: 'google/gemini-2.0-flash-lite-001',
         messages: [
           {
             role: 'system',
-            content: `You are Chef Dinerforged, an expert culinary scientist and AI companion. Provide clear, precise advice on culinary techniques, ingredient substitutions, wine pairings, and food science troubleshooting. Active Recipe Context: ${context || 'None'}. Keep answers helpful, concise, and structured.`,
+            content: 'You are Chef Dinerforged, an expert culinary assistant. Provide clear, structured, and helpful answers for culinary questions, ingredient substitutions, and troubleshooting.',
           },
-          { role: 'user', content: prompt },
+          {
+            role: 'user',
+            content: prompt,
+          },
         ],
+        max_tokens: 600,
       }),
     });
 
     const data = await response.json();
-    const reply = data.choices?.[0]?.message?.content || 'Chef is currently reviewing ingredients. Please try again in a moment!';
+
+    if (!response.ok) {
+      console.error('[AI Chef OpenRouter Error]', JSON.stringify(data));
+      return {
+        statusCode: response.status,
+        body: JSON.stringify({ error: data?.error?.message || 'OpenRouter API Error' }),
+      };
+    }
 
     return {
       statusCode: 200,
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ reply }),
+      body: JSON.stringify({
+        reply: data.choices?.[0]?.message?.content || 'Chef has no response right now.',
+      }),
     };
   } catch (error: any) {
+    console.error('[AI Chef Exception]', error);
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: error.message || 'Serverless Execution Failed' }),
+      body: JSON.stringify({ error: error.message || 'Internal Server Error' }),
     };
   }
 };
