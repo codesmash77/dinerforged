@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Sparkles, Send, Camera, ChefHat, Bot, User, Loader2 } from 'lucide-react';
+import { Sparkles, Send, ChefHat, Bot, User, Loader2 } from 'lucide-react';
 import { useOnlineStatus } from '../hooks/useOnlineStatus';
 import { findSmartSubstitute } from '../utils/vectorSearch';
 
@@ -18,7 +18,7 @@ export const AIChefPage: React.FC = () => {
     {
       id: '1',
       sender: 'chef',
-      text: 'Hello! I am Chef Dinerforged. Ask me about ingredient substitutions, food science troubleshooting, or upload a photo to scan your pantry.',
+      text: 'Hello! I am Chef Dinerforged. Ask me about ingredient substitutions, food science troubleshooting, or culinary techniques.',
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     },
   ]);
@@ -71,6 +71,11 @@ export const AIChefPage: React.FC = () => {
 
       const data = await res.json();
 
+      // Check if the serverless function responded with an HTTP error status
+      if (!res.ok) {
+        throw new Error(data.error || `Server responded with status ${res.status}`);
+      }
+
       setMessages((prev) => [
         ...prev,
         {
@@ -80,13 +85,13 @@ export const AIChefPage: React.FC = () => {
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         },
       ]);
-    } catch (err) {
+    } catch (err: any) {
       setMessages((prev) => [
         ...prev,
         {
           id: (Date.now() + 1).toString(),
           sender: 'chef',
-          text: 'Sorry, I encountered an error communicating with the serverless function.',
+          text: err?.message ? `[Error]: ${err.message}` : 'Sorry, I encountered an error communicating with the serverless function.',
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         },
       ]);
