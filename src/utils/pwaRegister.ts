@@ -1,3 +1,4 @@
+/// <reference types="vite/client" />
 import { Workbox } from 'workbox-window';
 
 export function registerServiceWorker() {

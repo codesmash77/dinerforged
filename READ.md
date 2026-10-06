@@ -49,3 +49,80 @@ Dinerforged is an AI-augmented Progressive Web App (PWA) designed for home cooks
 
    ```bash
    npm install
+
+
+![alt text](image.png) //Touch-Friendly Meal Planner Grid layout
+
+//Folder Structure:
+
+dinerforged/
+├── .github/
+│   └── workflows/
+│       └── ci.yml
+├── netlify/                      <-- Serverless backend directory
+│   └── functions/
+│       ├── ai-chef.ts            <-- OpenRouter / Groq proxy
+│       └── parse-recipe.ts       <-- Vision OCR parser
+├── public/
+│   ├── favicon.ico
+│   ├── pwa-192x192.png
+│   └── pwa-512x512.png
+├── src/
+│   ├── components/
+│   │   ├── common/
+│   │   │   └── OfflineBanner.tsx
+│   │   ├── layout/
+│   │   │   ├── MobileNav.tsx
+│   │   │   └── Navbar.tsx
+│   │   ├── planner/
+│   │   │   ├── FlavorAnalyticsWidget.tsx
+│   │   │   ├── PantryRouletteModal.tsx
+│   │   │   └── RecipePickerModal.tsx
+│   │   ├── recipes/
+│   │   │   ├── CustomRecipeModal.tsx
+│   │   │   ├── HandsFreeCookingMode.tsx
+│   │   │   ├── RecipeCard.tsx
+│   │   │   └── ServingScaler.tsx
+│   │   ├── techniques/
+│   │   │   └── TechniqueCard.tsx
+│   │   └── utensils/
+│   │       └── UtensilCard.tsx
+│   ├── data/
+│   │   ├── recipes.ts
+│   │   ├── techniques.ts
+│   │   └── utensils.ts
+│   ├── hooks/
+│   │   ├── useOnlineStatus.ts
+│   │   └── useTheme.ts
+│   ├── pages/
+│   │   ├── AIChefPage.tsx
+│   │   ├── MealPlannerPage.tsx
+│   │   ├── RecipesPage.tsx
+│   │   ├── ShoppingListPage.tsx
+│   │   └── TechniquesPage.tsx
+│   ├── store/
+│   │   └── useAppStore.ts
+│   ├── types/
+│   │   └── index.ts
+│   └── utils/
+│       ├── aggregator.ts
+│       ├── physicsEstimator.ts
+│       ├── planOptimizer.ts
+│       ├── pwaRegister.ts
+│       ├── smartScaler.ts
+│       └── vectorSearch.ts
+│   ├── App.tsx
+│   ├── index.css
+│   └── main.tsx
+├── .dockerignore
+├── .gitignore
+├── Dockerfile
+├── index.html
+├── netlify.toml
+├── nginx.conf
+├── package.json
+├── postcss.config.js
+├── README.md
+├── tailwind.config.js
+├── tsconfig.json
+└── vite.config.ts
