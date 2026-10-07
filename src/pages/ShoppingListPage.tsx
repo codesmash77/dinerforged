@@ -1,23 +1,25 @@
 import React, { useState } from 'react';
-import { ShoppingCart, CheckSquare, Square, Trash2, Printer, Copy, Check, Info } from 'lucide-react';
+import { ShoppingCart, CheckSquare, Square, Trash2, Printer, Copy, Check } from 'lucide-react';
 import { useAppStore } from '../store/useAppStore';
-import { aggregateShoppingList } from '../utils/aggregator';
+import { aggregateRecipeIngredients } from '../utils/aggregator';
 
 export const ShoppingListPage: React.FC = () => {
   const { weeklyPlan, checkedShoppingItems, toggleShoppingItem, clearCheckedShoppingItems } = useAppStore();
   const [copied, setCopied] = useState(false);
 
-  // Grouped items across categories
-  const aggregatedByCategory = aggregateShoppingList(weeklyPlan);
+  // Flatten weekly plan recipes to aggregate ingredients
+  const allWeeklyRecipes = Object.values(weeklyPlan || {}).filter(Boolean) as any[];
+  const aggregatedByCategory = aggregateRecipeIngredients(allWeeklyRecipes);
 
   // Calculate totals
   let totalItemsCount = 0;
   let checkedCount = 0;
 
-  Object.values(aggregatedByCategory).forEach((items) => {
-    items.forEach((item) => {
+  Object.entries(aggregatedByCategory).forEach(([category, items]) => {
+    items.forEach((item, idx) => {
       totalItemsCount++;
-      if (checkedShoppingItems[item.id]) {
+      const itemId = `${category}-${idx}-${item.name}`;
+      if (checkedShoppingItems[itemId]) {
         checkedCount++;
       }
     });
@@ -30,9 +32,10 @@ export const ShoppingListPage: React.FC = () => {
     Object.entries(aggregatedByCategory).forEach(([category, items]) => {
       if (items.length > 0) {
         text += `--- ${category.toUpperCase()} ---\n`;
-        items.forEach((item) => {
-          const isDone = checkedShoppingItems[item.id] ? '[x]' : '[ ]';
-          text += `${isDone} ${item.name}: ${item.totalAmount} ${item.unit} (${item.recipeSources.join(', ')})\n`;
+        items.forEach((item, idx) => {
+          const itemId = `${category}-${idx}-${item.name}`;
+          const isDone = checkedShoppingItems[itemId] ? '[x]' : '[ ]';
+          text += `${isDone} ${item.name}: ${item.amount} ${item.unit}\n`;
         });
         text += '\n';
       }
@@ -56,7 +59,7 @@ export const ShoppingListPage: React.FC = () => {
             Aggregated Shopping List
           </h1>
           <p className="text-sm text-slate-600 dark:text-slate-400 mt-1 print:hidden">
-            Normalized ingredient list auto-generated from your 7-day meal plan.
+            Normalized ingredient list auto-generated from your meal planner.
           </p>
         </div>
 
@@ -111,7 +114,7 @@ export const ShoppingListPage: React.FC = () => {
           <ShoppingCart className="mx-auto h-12 w-12 text-slate-400 mb-3" />
           <h3 className="text-lg font-bold text-slate-900 dark:text-white">Your Shopping List is Empty</h3>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-            Assign recipes to your 7-Day Meal Planner to automatically generate your categorized grocery list.
+            Assign recipes to your Meal Planner to automatically generate your categorized grocery list.
           </p>
         </div>
       )}
@@ -119,7 +122,7 @@ export const ShoppingListPage: React.FC = () => {
       {/* Categorized Grocery List */}
       <div className="space-y-6">
         {Object.entries(aggregatedByCategory).map(([category, items]) => {
-          if (items.length === 0) return null;
+          if (!items || items.length === 0) return null;
 
           return (
             <div
@@ -131,13 +134,14 @@ export const ShoppingListPage: React.FC = () => {
               </h3>
 
               <div className="divide-y divide-slate-100 dark:divide-slate-800">
-                {items.map((item) => {
-                  const isChecked = !!checkedShoppingItems[item.id];
+                {items.map((item, idx) => {
+                  const itemId = `${category}-${idx}-${item.name}`;
+                  const isChecked = !!checkedShoppingItems[itemId];
 
                   return (
                     <div
-                      key={item.id}
-                      onClick={() => toggleShoppingItem(item.id)}
+                      key={itemId}
+                      onClick={() => toggleShoppingItem(itemId)}
                       className={`flex items-center justify-between py-3 cursor-pointer select-none transition-colors ${
                         isChecked ? 'opacity-50 line-through' : ''
                       }`}
@@ -150,14 +154,11 @@ export const ShoppingListPage: React.FC = () => {
                           <span className="text-sm font-semibold text-slate-900 dark:text-white print:text-black">
                             {item.name}
                           </span>
-                          <span className="ml-2 text-xs text-slate-500 dark:text-slate-400 print:hidden">
-                            ({item.recipeSources.join(', ')})
-                          </span>
                         </div>
                       </div>
 
                       <span className="text-sm font-bold text-culinary-600 dark:text-culinary-400 print:text-black">
-                        {item.totalAmount} {item.unit}
+                        {item.amount} {item.unit}
                       </span>
                     </div>
                   );

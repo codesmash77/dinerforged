@@ -1,71 +1,60 @@
-import { Ingredient, WeeklyPlan, IngredientCategory } from '../types';
+import { Recipe, IngredientCategory } from '../types';
 
 export interface AggregatedShoppingItem {
-  id: string;
   name: string;
-  totalAmount: number;
+  amount: number;
   unit: string;
-  category: IngredientCategory;
-  recipeSources: string[];
+  category: IngredientCategory | string;
 }
 
-export function aggregateShoppingList(
-  plan: WeeklyPlan,
-  customRecipes: Ingredient[] = []
-): Record<IngredientCategory, AggregatedShoppingItem[]> {
+export function aggregateRecipeIngredients(recipes: Recipe[]): Record<string, AggregatedShoppingItem[]> {
   const map: Record<string, AggregatedShoppingItem> = {};
 
-  // Helper to accumulate ingredients
-  const processIngredient = (ing: Ingredient, recipeTitle: string) => {
-    const key = `${ing.name.toLowerCase().trim()}_${ing.unit.toLowerCase().trim()}`;
+  recipes.forEach((recipe) => {
+    recipe.ingredients.forEach((ing) => {
+      const key = `${ing.name.toLowerCase().trim()}_${ing.unit.toLowerCase().trim()}`;
+      const numericAmount = typeof ing.amount === 'number' ? ing.amount : parseFloat(ing.amount as string) || 0;
 
-    if (!map[key]) {
-      map[key] = {
-        id: key,
-        name: ing.name,
-        totalAmount: ing.amount,
-        unit: ing.unit,
-        category: ing.category || 'Other',
-        recipeSources: [recipeTitle],
-      };
-    } else {
-      map[key].totalAmount = Math.round((map[key].totalAmount + ing.amount) * 100) / 100;
-      if (!map[key].recipeSources.includes(recipeTitle)) {
-        map[key].recipeSources.push(recipeTitle);
-      }
-    }
-  };
-
-  // Process all planned weekly meals
-  Object.values(plan).forEach((day) => {
-    ['breakfast', 'lunch', 'dinner'].forEach((mealType) => {
-      const recipe = day[mealType as keyof typeof day];
-      if (recipe) {
-        recipe.ingredients.forEach((ing) => processIngredient(ing, recipe.title));
+      if (map[key]) {
+        map[key].amount += numericAmount;
+      } else {
+        map[key] = {
+          name: ing.name,
+          amount: numericAmount,
+          unit: ing.unit,
+          category: ing.category || 'Other',
+        };
       }
     });
   });
 
-  // Group by Category
-  const grouped: Record<IngredientCategory, AggregatedShoppingItem[]> = {
-    Produce: [],
-    Pantry: [],
-    Dairy: [],
-    Meat: [],
-    Seafood: [],
-    Spices: [],
-    Leavening: [],
+  // Initialize all standard and custom categories dynamically
+  const categories: Record<string, AggregatedShoppingItem[]> = {
+    'Produce': [],
+    'Meat & Poultry': [],
+    'Meat': [],
+    'Seafood': [],
+    'Dairy & Eggs': [],
+    'Dairy': [],
+    'Pantry & Oils': [],
+    'Pantry': [],
     'Oil & Fat': [],
-    Other: [],
+    'Spices & Seasonings': [],
+    'Spices': [],
+    'Baking': [],
+    'Grains & Pasta': [],
+    'Canned & Jarred': [],
+    'Frozen': [],
+    'Beverages': [],
+    'Condiments & Sauces': [],
+    'Leavening': [],
+    'Other': [],
   };
 
   Object.values(map).forEach((item) => {
-    if (grouped[item.category]) {
-      grouped[item.category].push(item);
-    } else {
-      grouped.Other.push(item);
-    }
+    const cat = item.category in categories ? item.category : 'Other';
+    categories[cat].push(item);
   });
 
-  return grouped;
+  return categories;
 }
