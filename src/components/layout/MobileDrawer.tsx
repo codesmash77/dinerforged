@@ -23,11 +23,11 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({ isOpen, onClose }) =
     <div className="fixed inset-0 z-50 flex md:hidden">
       {/* Backdrop overlay */}
       <div 
-        className="fixed inset-0 bg-slate-950/70 backdrop-blur-sm transition-opacity" 
+        className="fixed inset-0 bg-slate-950/75 backdrop-blur-sm transition-opacity" 
         onClick={onClose} 
       />
 
-      {/* Slide-out Drawer Panel - Full height, solid background, high z-index */}
+      {/* Slide-out Drawer Panel - Full height, right-aligned, solid background, high z-index */}
       <div className="relative ml-auto flex h-full w-4/5 max-w-xs flex-col bg-white dark:bg-slate-900 shadow-2xl p-6 z-50 border-l border-slate-200 dark:border-slate-800">
         <div className="flex items-center justify-between border-b pb-4 dark:border-slate-800">
           <span className="text-base font-bold text-slate-900 dark:text-white">Dinerforged Menu</span>
@@ -53,7 +53,7 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({ isOpen, onClose }) =
                 }`
               }
             >
-              <Icon className="h-5 w-5" />
+              <Icon className="h-5 w-5 text-culinary-500" />
               <span>{label}</span>
             </NavLink>
           ))}
