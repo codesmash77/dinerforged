@@ -1,16 +1,14 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { ChefHat, BookOpen, Calendar, ShoppingCart, Sparkles, Sun, Moon, WifiOff, UtensilsCrossed, Download, Bookmark, Menu } from 'lucide-react';
+import { ChefHat, BookOpen, Calendar, ShoppingCart, Sparkles, Sun, Moon, WifiOff, UtensilsCrossed, Download, Bookmark } from 'lucide-react';
 import { useTheme } from '../../hooks/useTheme';
 import { useOnlineStatus } from '../../hooks/useOnlineStatus';
 import { usePWAInstall } from '../../hooks/usePWAInstall';
-import { MobileDrawer } from './MobileDrawer';
 
 export const Navbar: React.FC = () => {
   const { darkMode, toggleDarkMode } = useTheme();
   const isOnline = useOnlineStatus();
   const { isInstallable, installPWA } = usePWAInstall();
-  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
   const navLinks = [
     { to: '/', label: 'Recipes', icon: UtensilsCrossed },
@@ -25,17 +23,8 @@ export const Navbar: React.FC = () => {
     <header className="sticky top-0 z-40 w-full border-b border-slate-200 bg-white/80 backdrop-blur-md dark:border-slate-800 dark:bg-slate-950/80 transition-colors">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         
-        {/* Brand Logo & Mobile Menu Trigger */}
+        {/* Brand Logo */}
         <div className="flex items-center gap-3">
-          {/* Hamburger Menu Button (Mobile Only) */}
-          <button
-            onClick={() => setIsDrawerOpen(true)}
-            aria-label="Open Navigation Menu"
-            className="rounded-lg p-2 text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 md:hidden transition-colors"
-          >
-            <Menu className="h-6 w-6" />
-          </button>
-
           <NavLink to="/" className="flex items-center gap-2 text-culinary-500 font-display font-bold text-xl tracking-tight">
             <ChefHat className="h-7 w-7 text-culinary-500" />
             <span className="text-slate-900 dark:text-white">Diner<span className="text-culinary-500">forged</span></span>
@@ -95,9 +84,6 @@ export const Navbar: React.FC = () => {
         </div>
 
       </div>
-
-      {/* Slide-out Mobile Menu Drawer */}
-      <MobileDrawer isOpen={isDrawerOpen} onClose={() => setIsDrawerOpen(false)} />
     </header>
   );
 };
