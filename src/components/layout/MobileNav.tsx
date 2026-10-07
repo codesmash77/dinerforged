@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { UtensilsCrossed, Calendar, ShoppingCart, BookOpen, Sparkles, Download } from 'lucide-react';
+import { UtensilsCrossed, Calendar, ShoppingCart, BookOpen, Sparkles, Download, Bookmark } from 'lucide-react';
 import { usePWAInstall } from '../../hooks/usePWAInstall';
 
 export const MobileNav: React.FC = () => {
@@ -11,6 +11,7 @@ export const MobileNav: React.FC = () => {
     { to: '/planner', label: 'Planner', icon: Calendar },
     { to: '/shopping', label: 'Shopping', icon: ShoppingCart },
     { to: '/techniques', label: 'Guides', icon: BookOpen },
+    { to: '/favorites', label: 'Favorites', icon: Bookmark },
     { to: '/ai-chef', label: 'AI Chef', icon: Sparkles },
   ];
 

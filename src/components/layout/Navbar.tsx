@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { ChefHat, BookOpen, Calendar, ShoppingCart, Sparkles, Sun, Moon, WifiOff, UtensilsCrossed, Download } from 'lucide-react';
+import { ChefHat, BookOpen, Calendar, ShoppingCart, Sparkles, Sun, Moon, WifiOff, UtensilsCrossed, Download, Bookmark } from 'lucide-react';
 import { useTheme } from '../../hooks/useTheme';
 import { useOnlineStatus } from '../../hooks/useOnlineStatus';
 import { usePWAInstall } from '../../hooks/usePWAInstall';
@@ -15,6 +15,7 @@ export const Navbar: React.FC = () => {
     { to: '/planner', label: 'Planner', icon: Calendar },
     { to: '/shopping', label: 'Shopping', icon: ShoppingCart },
     { to: '/techniques', label: 'Techniques', icon: BookOpen },
+    { to: '/favorites', label: 'Favorites', icon: Bookmark },
     { to: '/ai-chef', label: 'AI Chef', icon: Sparkles },
   ];
 
