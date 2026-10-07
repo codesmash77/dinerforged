@@ -13,6 +13,9 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, onSelect, onEdit
   const { savedRecipeIds, toggleSaveRecipe, deleteCustomRecipe } = useAppStore();
   const isBookmarked = savedRecipeIds.includes(recipe.id);
 
+  // Resolve cover image from images array or imageUrl fallback
+  const coverImage = recipe.imageUrl?.[0] || recipe.imageUrl|| 'https://images.unsplash.com/photo-1495521821757-a1efb6729352?auto=format&fit=crop&w=800&q=80';
+
   const handleDelete = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (window.confirm(`Delete custom recipe "${recipe.title}"?`)) {
@@ -38,7 +41,7 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, onSelect, onEdit
       {/* Recipe Header Image */}
       <div className="relative h-48 w-full overflow-hidden bg-slate-100 dark:bg-slate-800">
         <img
-          src={recipe.imageUrl || 'https://images.unsplash.com/photo-1495521821757-a1efb6729352?auto=format&fit=crop&w=800&q=80'}
+          src={coverImage}
           alt={recipe.title}
           className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
           loading="lazy"
@@ -98,14 +101,14 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, onSelect, onEdit
       <div className="flex items-center justify-between p-4 text-xs font-medium text-slate-600 dark:text-slate-400">
         <div className="flex items-center gap-1">
           <Clock className="h-3.5 w-3.5 text-culinary-500" />
-          <span>{recipe.prepTimeMinutes + recipe.cookTimeMinutes} mins</span>
+          <span>{(recipe.prepTimeMinutes || 0) + (recipe.cookTimeMinutes || 0)} mins</span>
         </div>
         <div className="flex items-center gap-1">
           <Flame className="h-3.5 w-3.5 text-terracotta-500" />
           <span>{recipe.difficulty}</span>
         </div>
         <div className="text-slate-500">
-          <span>{recipe.ingredients.length} items</span>
+          <span>{recipe.ingredients?.length || 0} items</span>
         </div>
       </div>
     </div>

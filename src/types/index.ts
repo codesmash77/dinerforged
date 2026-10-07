@@ -40,7 +40,7 @@ export interface Recipe {
   ingredients: Ingredient[];
   instructions: InstructionStep[];
   tags: string[];
-  images?: string[];
+  imageUrl?: string;
   heatConductivityRating?: 'low' | 'medium' | 'high';
   isCustom?: boolean; // For local CRUD tracking
 }

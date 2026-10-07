@@ -13,6 +13,11 @@ export const HandsFreeCookingMode: React.FC<HandsFreeCookingModeProps> = ({ reci
   const [timerSeconds, setTimerSeconds] = useState<number | null>(null);
   const [isTimerActive, setIsTimerActive] = useState(false);
 
+  // Normalize instructions to support both string[] and InstructionStep[]
+  const instructionsList = (recipe.instructions || []).map((step) => 
+    typeof step === 'string' ? step : step.text
+  );
+
   // Web Speech API Voice Recognition setup
   useEffect(() => {
     let recognition: any = null;
@@ -25,7 +30,7 @@ export const HandsFreeCookingMode: React.FC<HandsFreeCookingModeProps> = ({ reci
       recognition.onresult = (event: any) => {
         const transcript = event.results[event.results.length - 1][0].transcript.toLowerCase().trim();
         if (transcript.includes('next')) {
-          setCurrentStep((prev) => Math.min(recipe.instructions.length - 1, prev + 1));
+          setCurrentStep((prev) => Math.min(instructionsList.length - 1, prev + 1));
         } else if (transcript.includes('back') || transcript.includes('previous')) {
           setCurrentStep((prev) => Math.max(0, prev - 1));
         }
@@ -41,7 +46,7 @@ export const HandsFreeCookingMode: React.FC<HandsFreeCookingModeProps> = ({ reci
     return () => {
       if (recognition) recognition.stop();
     };
-  }, [isListening, recipe.instructions.length]);
+  }, [isListening, instructionsList.length]);
 
   // Timer countdown hook
   useEffect(() => {
@@ -94,10 +99,10 @@ export const HandsFreeCookingMode: React.FC<HandsFreeCookingModeProps> = ({ reci
       {/* Main Step Viewer */}
       <div className="flex-1 flex flex-col justify-center max-w-4xl mx-auto my-8">
         <div className="text-culinary-400 text-lg font-bold mb-2">
-          Step {currentStep + 1} of {recipe.instructions.length}
+          Step {currentStep + 1} of {instructionsList.length}
         </div>
         <p className="text-2xl md:text-4xl font-medium leading-relaxed tracking-wide text-slate-100">
-          {recipe.instructions[currentStep]}
+          {instructionsList[currentStep]}
         </p>
 
         {/* Dynamic Timer Widget */}
@@ -146,8 +151,8 @@ export const HandsFreeCookingMode: React.FC<HandsFreeCookingModeProps> = ({ reci
         </button>
 
         <button
-          onClick={() => setCurrentStep((prev) => Math.min(recipe.instructions.length - 1, prev + 1))}
-          disabled={currentStep === recipe.instructions.length - 1}
+          onClick={() => setCurrentStep((prev) => Math.min(instructionsList.length - 1, prev + 1))}
+          disabled={currentStep === instructionsList.length - 1}
           className="flex items-center gap-2 rounded-xl bg-culinary-500 px-6 py-3 font-semibold text-slate-950 disabled:opacity-40 hover:bg-culinary-400"
         >
           Next <ChevronRight className="h-5 w-5" />
