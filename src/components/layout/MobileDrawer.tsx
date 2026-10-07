@@ -21,25 +21,25 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({ isOpen, onClose }) =
 
   return (
     <div className="fixed inset-0 z-50 flex md:hidden">
-      {/* Backdrop */}
+      {/* Backdrop overlay */}
       <div 
-        className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm transition-opacity" 
+        className="fixed inset-0 bg-slate-950/70 backdrop-blur-sm transition-opacity" 
         onClick={onClose} 
       />
 
-      {/* Slide-out Drawer Panel */}
-      <div className="relative ml-auto flex w-full max-w-xs flex-col bg-white dark:bg-slate-900 shadow-2xl p-6 z-50">
+      {/* Slide-out Drawer Panel - Full height, solid background, high z-index */}
+      <div className="relative ml-auto flex h-full w-4/5 max-w-xs flex-col bg-white dark:bg-slate-900 shadow-2xl p-6 z-50 border-l border-slate-200 dark:border-slate-800">
         <div className="flex items-center justify-between border-b pb-4 dark:border-slate-800">
           <span className="text-base font-bold text-slate-900 dark:text-white">Dinerforged Menu</span>
           <button 
             onClick={onClose} 
-            className="rounded-lg p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+            className="rounded-lg p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
           >
             <X className="h-6 w-6" />
           </button>
         </div>
 
-        <nav className="mt-6 flex flex-col gap-2">
+        <nav className="mt-6 flex flex-col gap-2 overflow-y-auto">
           {secondaryLinks.map(({ to, label, icon: Icon }) => (
             <NavLink
               key={to}
@@ -48,8 +48,8 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({ isOpen, onClose }) =
               className={({ isActive }) =>
                 `flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold transition-colors ${
                   isActive
-                    ? 'bg-culinary-500/10 text-culinary-600 dark:text-culinary-400'
-                    : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800'
+                    ? 'bg-culinary-500/10 text-culinary-600 dark:text-culinary-400 font-bold'
+                    : 'text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800'
                 }`
               }
             >
