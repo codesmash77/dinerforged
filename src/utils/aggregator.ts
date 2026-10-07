@@ -10,9 +10,22 @@ export interface AggregatedShoppingItem {
 export function aggregateRecipeIngredients(recipes: Recipe[]): Record<string, AggregatedShoppingItem[]> {
   const map: Record<string, AggregatedShoppingItem> = {};
 
+  // Safeguard against non-array or null input
+  if (!Array.isArray(recipes)) {
+    recipes = [];
+  }
+
   recipes.forEach((recipe) => {
+    // Safeguard if recipe or recipe.ingredients is missing
+    if (!recipe || !Array.isArray(recipe.ingredients)) return;
+
     recipe.ingredients.forEach((ing) => {
-      const key = `${ing.name.toLowerCase().trim()}_${ing.unit.toLowerCase().trim()}`;
+      if (!ing || !ing.name) return;
+
+      const name = ing.name.toLowerCase().trim();
+      const unit = (ing.unit || 'unit').toLowerCase().trim();
+      const key = `${name}_${unit}`;
+      
       const numericAmount = typeof ing.amount === 'number' ? ing.amount : parseFloat(ing.amount as string) || 0;
 
       if (map[key]) {
@@ -21,14 +34,13 @@ export function aggregateRecipeIngredients(recipes: Recipe[]): Record<string, Ag
         map[key] = {
           name: ing.name,
           amount: numericAmount,
-          unit: ing.unit,
+          unit: ing.unit || 'unit',
           category: ing.category || 'Other',
         };
       }
     });
   });
 
-  // Initialize all standard and custom categories dynamically
   const categories: Record<string, AggregatedShoppingItem[]> = {
     'Produce': [],
     'Meat & Poultry': [],
