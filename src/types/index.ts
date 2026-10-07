@@ -50,19 +50,23 @@ export interface Technique {
   id: string;
   title: string;
   category: string;
-  scienceExplanation: string;
-  commonMistakes: string[];
-  proTips: string[];
+  description: string;
+  scienceExplanation?: string; // Updated property
+  scienceNote?: string;
+  pitfalls?: string[];
+  steps?: string[];
+  isCustom?: boolean;
 }
 
 export interface Utensil {
   id: string;
   name: string;
-  category: 'Cookware' | 'Knives' | 'Prep Tools' | 'Baking' | 'Specialty';
-  careInstructions: string;
-  materialInfo: string;
-  thermalRetention: 'High' | 'Medium' | 'Low';
-  proTips: string[];
+  category: string;
+  description: string;
+  materialInfo?: string; 
+  thermalRetention?: string;// Updated property
+  careTips?: string[];
+  isCustom?: boolean;
 }
 
 export interface MealPlanDay {

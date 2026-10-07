@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import { Recipe, WeeklyPlan } from '../types';
+import { Recipe, WeeklyPlan, Technique, Utensil } from '../types';
 
 interface AppState {
   // Theme
@@ -26,6 +26,18 @@ interface AppState {
   checkedShoppingItems: Record<string, boolean>;
   toggleShoppingItem: (id: string) => void;
   clearCheckedShoppingItems: () => void;
+
+  // Custom Techniques Local CRUD
+  customTechniques: Technique[];
+  addCustomTechnique: (technique: Technique) => void;
+  updateCustomTechnique: (id: string, updatedFields: Partial<Technique>) => void;
+  deleteCustomTechnique: (id: string) => void;
+
+  // Custom Utensils Local CRUD
+  customUtensils: Utensil[];
+  addCustomUtensil: (utensil: Utensil) => void;
+  updateCustomUtensil: (id: string, updatedFields: Partial<Utensil>) => void;
+  deleteCustomUtensil: (id: string) => void;
 }
 
 export const useAppStore = create<AppState>()(
@@ -89,6 +101,40 @@ export const useAppStore = create<AppState>()(
           },
         })),
       clearCheckedShoppingItems: () => set({ checkedShoppingItems: {} }),
+
+      // Custom Techniques Local CRUD
+      customTechniques: [],
+      addCustomTechnique: (newTechnique) =>
+        set((state) => ({
+          customTechniques: [newTechnique, ...state.customTechniques],
+        })),
+      updateCustomTechnique: (id, updatedFields) =>
+        set((state) => ({
+          customTechniques: state.customTechniques.map((t) =>
+            t.id === id ? { ...t, ...updatedFields } : t
+          ),
+        })),
+      deleteCustomTechnique: (id) =>
+        set((state) => ({
+          customTechniques: state.customTechniques.filter((t) => t.id !== id),
+        })),
+
+      // Custom Utensils Local CRUD
+      customUtensils: [],
+      addCustomUtensil: (newUtensil) =>
+        set((state) => ({
+          customUtensils: [newUtensil, ...state.customUtensils],
+        })),
+      updateCustomUtensil: (id, updatedFields) =>
+        set((state) => ({
+          customUtensils: state.customUtensils.map((u) =>
+            u.id === id ? { ...u, ...updatedFields } : u
+          ),
+        })),
+      deleteCustomUtensil: (id) =>
+        set((state) => ({
+          customUtensils: state.customUtensils.filter((u) => u.id !== id),
+        })),
     }),
     {
       name: 'dinerforged-v2-storage',

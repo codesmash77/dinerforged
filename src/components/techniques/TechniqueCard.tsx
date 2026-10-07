@@ -1,82 +1,121 @@
-import React, { useState } from 'react';
-import { ChevronDown, ChevronUp, AlertTriangle, Lightbulb, FlaskConical } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X } from 'lucide-react';
 import { Technique } from '../../types';
+import { useAppStore } from '../../store/useAppStore';
 
-interface TechniqueCardProps {
-  technique: Technique;
+interface TechniqueModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  techniqueToEdit?: Technique | null;
 }
 
-export const TechniqueCard: React.FC<TechniqueCardProps> = ({ technique }) => {
-  const [isExpanded, setIsExpanded] = useState(false);
+export const TechniqueModal: React.FC<TechniqueModalProps> = ({ isOpen, onClose, techniqueToEdit }) => {
+  const { addCustomTechnique, updateCustomTechnique } = useAppStore();
+
+  const [title, setTitle] = useState('');
+  const [category, setCategory] = useState('Sauces & Chemistry');
+  const [description, setDescription] = useState('');
+  const [scienceExplanation, setScienceExplanation] = useState('');
+
+  useEffect(() => {
+    if (techniqueToEdit) {
+      setTitle(techniqueToEdit.title || '');
+      setCategory(techniqueToEdit.category || 'Sauces & Chemistry');
+      setDescription(techniqueToEdit.description || '');
+      setScienceExplanation(techniqueToEdit.scienceExplanation || '');
+    } else {
+      setTitle('');
+      setCategory('Sauces & Chemistry');
+      setDescription('');
+      setScienceExplanation('');
+    }
+  }, [techniqueToEdit, isOpen]);
+
+  if (!isOpen) return null;
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!title.trim()) return;
+
+    const data: Technique = {
+      id: techniqueToEdit ? techniqueToEdit.id : `tech-${Date.now()}`,
+      title,
+      category,
+      description,
+      scienceExplanation,
+      isCustom: true,
+    };
+
+    if (techniqueToEdit) {
+      updateCustomTechnique(techniqueToEdit.id, data);
+    } else {
+      addCustomTechnique(data);
+    }
+    onClose();
+  };
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all dark:border-slate-800 dark:bg-slate-900">
-      <div
-        onClick={() => setIsExpanded(!isExpanded)}
-        className="flex cursor-pointer items-center justify-between p-5 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
-      >
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-culinary-500/10 text-culinary-600 dark:text-culinary-400">
-            <FlaskConical className="h-5 w-5" />
-          </div>
-          <div>
-            <span className="text-xs font-semibold uppercase tracking-wider text-culinary-600 dark:text-culinary-400">
-              {technique.category}
-            </span>
-            <h3 className="text-lg font-bold text-slate-900 dark:text-white">
-              {technique.title}
-            </h3>
-          </div>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm overflow-y-auto">
+      <div className="relative w-full max-w-2xl rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-slate-800 dark:bg-slate-900 my-8">
+        <div className="flex items-center justify-between border-b pb-4 dark:border-slate-800">
+          <h2 className="text-xl font-bold text-slate-900 dark:text-white">
+            {techniqueToEdit ? 'Edit Custom Technique' : 'Add Custom Technique'}
+          </h2>
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+            <X className="h-5 w-5" />
+          </button>
         </div>
 
-        <button className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
-          {isExpanded ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
-        </button>
+        <form onSubmit={handleSubmit} className="mt-4 space-y-4 max-h-[70vh] overflow-y-auto pr-2">
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">Technique Title</label>
+            <input
+              type="text"
+              required
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="e.g. Sous-Vide Tempering"
+              className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">Category</label>
+            <input
+              type="text"
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">Description</label>
+            <textarea
+              rows={3}
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              className="mt-1 w-full rounded-lg border border-slate-300 p-2.5 text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-white resize-none"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">Science Explanation</label>
+            <textarea
+              rows={3}
+              value={scienceExplanation}
+              onChange={(e) => setScienceExplanation(e.target.value)}
+              placeholder="Detail the molecular or chemical breakdown..."
+              className="mt-1 w-full rounded-lg border border-slate-300 p-2.5 text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-white resize-none"
+            />
+          </div>
+
+          <div className="pt-4 flex justify-end gap-3 border-t dark:border-slate-800">
+            <button type="button" onClick={onClose} className="rounded-lg px-4 py-2 text-sm text-slate-600 dark:text-slate-300">Cancel</button>
+            <button type="submit" className="rounded-lg bg-culinary-500 px-5 py-2 text-sm font-semibold text-slate-950 hover:bg-culinary-400">Save Technique</button>
+          </div>
+        </form>
       </div>
-
-      {isExpanded && (
-        <div className="border-t border-slate-100 bg-slate-50/50 p-5 space-y-4 dark:border-slate-800 dark:bg-slate-900/40">
-          {/* Science Explanation */}
-          <div>
-            <h4 className="text-xs font-bold uppercase text-slate-500 dark:text-slate-400 mb-1">
-              Food Science Breakdown
-            </h4>
-            <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
-              {technique.scienceExplanation}
-            </p>
-          </div>
-
-          {/* Common Mistakes */}
-          <div>
-            <h4 className="flex items-center gap-1.5 text-xs font-bold uppercase text-red-600 dark:text-red-400 mb-2">
-              <AlertTriangle className="h-3.5 w-3.5" /> Common Pitfalls
-            </h4>
-            <ul className="space-y-1">
-              {technique.commonMistakes.map((mistake, idx) => (
-                <li key={idx} className="text-xs text-slate-600 dark:text-slate-400 flex items-start gap-2">
-                  <span className="text-red-400 font-bold">•</span>
-                  <span>{mistake}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Pro Tips */}
-          <div>
-            <h4 className="flex items-center gap-1.5 text-xs font-bold uppercase text-culinary-600 dark:text-culinary-400 mb-2">
-              <Lightbulb className="h-3.5 w-3.5" /> Chef's Pro Tips
-            </h4>
-            <ul className="space-y-1">
-              {technique.proTips.map((tip, idx) => (
-                <li key={idx} className="text-xs text-slate-600 dark:text-slate-400 flex items-start gap-2">
-                  <span className="text-culinary-500 font-bold">•</span>
-                  <span>{tip}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

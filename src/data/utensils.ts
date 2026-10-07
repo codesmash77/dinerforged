@@ -2,36 +2,83 @@ import { Utensil } from '../types';
 
 export const utensils: Utensil[] = [
   {
-    id: 'utensil-cast-iron-skillet',
-    name: 'Pre-Seasoned Cast Iron Skillet',
+    id: 'utensil-1',
+    name: 'Cast Iron Skillet',
     category: 'Cookware',
-    materialInfo: 'High-density cast iron alloy offering high thermal mass and emissivity.',
-    careInstructions: 'Wash with mild soap, dry immediately over medium heat on stove, and apply a thin layer of neutral oil.',
-    thermalRetention: 'High',
-    proTips: [
-      'Preheat cast iron for at least 5 to 10 minutes prior to cooking to eliminate cold spots across the surface.'
-    ]
+    description: 'Heavy-duty pan renowned for superior heat retention and natural non-stick seasoning buildup.',
+    materialInfo: 'Made from high-carbon iron alloyed with small amounts of carbon and silicon.',
+    thermalRetention: 'Exceptional (Holds and radiates heat evenly over long cooking periods)',
+    careTips: ['Wash with hot water and stiff brush (avoid harsh dish soap)', 'Dry completely on stovetop and apply a thin layer of oil'],
+    isCustom: false,
   },
   {
-    id: 'utensil-chefs-knife',
-    name: '8-Inch Japanese Gyuto / Chef’s Knife',
-    category: 'Knives',
-    materialInfo: 'High-carbon VG-10 stainless steel hardened to 60+ HRC for edge retention.',
-    careInstructions: 'Hand wash only, dry immediately, and hone regularly with a ceramic rod. Never clean in a dishwasher.',
-    thermalRetention: 'Low',
-    proTips: [
-      'Pinch the blade at the bolster using your thumb and index finger rather than gripping only the wooden handle for superior control.'
-    ]
+    id: 'utensil-2',
+    name: 'Japanese Gyuto Chef Knife',
+    category: 'Cutlery',
+    description: 'Versatile multi-purpose kitchen knife featuring a thin, hard steel core and acute 15-degree edge angle.',
+    materialInfo: 'Forged from high-performance carbon or stainless steels like VG-10 or SG2.',
+    thermalRetention: 'N/A (Cutlery)',
+    careTips: ['Never wash in a dishwasher', 'Hone weekly on a ceramic rod and sharpen on waterstones'],
+    isCustom: false,
   },
   {
-    id: 'utensil-dutch-oven',
+    id: 'utensil-3',
+    name: 'End-Grain Wooden Cutting Board',
+    category: 'Prep Tools',
+    description: 'Knife-friendly wooden board where wood fibers absorb blade impact rather than dulling edges.',
+    materialInfo: 'Constructed from hardwood blocks (Maple, Walnut, or Cherry).',
+    thermalRetention: 'Low (Insulative wood properties)',
+    careTips: ['Oil monthly with food-grade mineral oil or beeswax', 'Never submerge in water'],
+    isCustom: false,
+  },
+  {
+    id: 'utensil-4',
+    name: 'Mandoline Slicer',
+    category: 'Prep Tools',
+    description: 'Precision adjustable slicing tool with an exposed ultra-sharp razor blade for uniform vegetable cuts.',
+    materialInfo: 'Surgical stainless steel blades embedded in reinforced ABS polymer chassis.',
+    thermalRetention: 'N/A',
+    careTips: ['Always use safety hand guard', 'Clean blade carefully using a brush'],
+    isCustom: false,
+  },
+  {
+    id: 'utensil-5',
     name: 'Enameled Cast Iron Dutch Oven',
     category: 'Cookware',
-    materialInfo: 'Heavy cast iron core coated in acid-resistant vitreous enamel.',
-    careInstructions: 'Avoid metal utensils that could scratch enamel. Soak in baking soda and warm water for stubborn stains.',
-    thermalRetention: 'High',
-    proTips: [
-      'Ideal for low-and-slow braising due to uniform heat distribution from all sides.'
-    ]
-  }
+    description: 'Heavy lidded pot ideal for braising meats, baking artisan bread, and simmering long-cooking stews.',
+    materialInfo: 'Cast iron core coated inside and out with vitreous porcelain enamel.',
+    thermalRetention: 'Exceptional (Uniform radiant heat distribution for braising)',
+    careTips: ['Avoid thermal shock by letting it cool before washing', 'Use wooden or silicone utensils'],
+    isCustom: false,
+  },
+  {
+    id: 'utensil-6',
+    name: 'Offset Palette Spatula',
+    category: 'Bakery & Pastry',
+    description: 'Flexible angled stainless steel blade designed for spreading frostings, plating sauces, and turning delicate fish fillets.',
+    materialInfo: 'Spring-tempered stainless steel blade.',
+    thermalRetention: 'Low',
+    careTips: ['Dishwasher safe', 'Store flat or in utensil crock'],
+    isCustom: false,
+  },
+  {
+    id: 'utensil-7',
+    name: 'Microplane Rasp Grater',
+    category: 'Prep Tools',
+    description: 'Ultra-sharp photo-etched stainless steel grater ideal for zesting citrus, grating parmesan, and mincing garlic or ginger.',
+    materialInfo: 'Chemical photo-etching on surgical-grade stainless steel sheets.',
+    thermalRetention: 'N/A',
+    careTips: ['Rinse immediately after use', 'Store with protective plastic cover'],
+    isCustom: false,
+  },
+  {
+    id: 'utensil-8',
+    name: 'Immersion Hand Blender',
+    category: 'Small Appliances',
+    description: 'Motorized handheld blending wand for puréeing soups, emulsifying vinaigrettes, and whipping cream directly in pots.',
+    materialInfo: 'ABS housing with stainless steel shaft and titanium-coated blade assembly.',
+    thermalRetention: 'Moderate',
+    careTips: ['Unplug before detaching shaft', 'Clean blending bell immediately'],
+    isCustom: false,
+  },
 ];
