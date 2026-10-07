@@ -1,24 +1,29 @@
 export type IngredientCategory = 
-  | 'Produce' 
-  | 'Pantry' 
-  | 'Dairy' 
-  | 'Meat' 
-  | 'Seafood' 
-  | 'Spices' 
-  | 'Leavening'
-  | 'Oil & Fat'
-  | 'Other';
+  | 'Produce' | 'Meat & Poultry' | 'Seafood' | 'Dairy & Eggs' 
+  | 'Pantry & Oils' | 'Spices & Seasonings' | 'Baking' | 'Grains & Pasta'
+  | 'Canned & Jarred' | 'Frozen' | 'Beverages' | 'Condiments & Sauces';
+
+export type MeasurementUnit = 
+  | 'g' | 'kg' | 'oz' | 'lb' 
+  | 'ml' | 'l' | 'tsp' | 'tbsp' | 'cup' | 'fl oz' | 'pt' | 'qt' | 'gal'
+  | 'pinch' | 'dash' | 'clove' | 'slice' | 'piece' | 'can' | 'package' | 'unit';
 
 export type ScalingType = 'linear' | 'sublinear_spices' | 'sublinear_leavening' | 'fixed_binders';
 
 export interface Ingredient {
   id: string;
   name: string;
-  amount: number;
-  unit: string;
+  amount: number | ''; // Allow empty string for clean backspacing
+  unit: MeasurementUnit;
   category: IngredientCategory;
   scalingType?: ScalingType;
-  flavorVector?: number[]; // [Sweet, Savory, Acid, Fat, Umami, Bitter]
+  flavorVector?: number[]; 
+}
+
+export interface InstructionStep {
+  id: string;
+  stepNumber: number;
+  text: string;
 }
 
 export interface Recipe {
@@ -33,9 +38,9 @@ export interface Recipe {
   baseServings: number;
   difficulty: 'Easy' | 'Medium' | 'Hard';
   ingredients: Ingredient[];
-  instructions: string[];
+  instructions: InstructionStep[];
   tags: string[];
-  imageUrl?: string;
+  images?: string[];
   heatConductivityRating?: 'low' | 'medium' | 'high';
   isCustom?: boolean; // For local CRUD tracking
 }

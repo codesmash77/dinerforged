@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { X, Plus, Trash2 } from 'lucide-react';
-import { Recipe, Ingredient, IngredientCategory } from '../../types';
+import { X, Plus, Trash2, ArrowUp, ArrowDown, Image as ImageIcon, Upload, Star } from 'lucide-react';
+import { Recipe, Ingredient, InstructionStep, MeasurementUnit, IngredientCategory } from '../../types';
 import { useAppStore } from '../../store/useAppStore';
 
 interface CustomRecipeModalProps {
@@ -9,8 +9,15 @@ interface CustomRecipeModalProps {
   recipeToEdit?: Recipe | null;
 }
 
-const CATEGORIES: IngredientCategory[] = [
-  'Produce', 'Pantry', 'Dairy', 'Meat', 'Seafood', 'Spices', 'Leavening', 'Oil & Fat', 'Other'
+const MEASUREMENT_UNITS: MeasurementUnit[] = [
+  'unit', 'g', 'kg', 'oz', 'lb', 'ml', 'l', 'tsp', 'tbsp', 'cup',
+  'fl oz', 'pt', 'qt', 'gal', 'pinch', 'dash', 'clove', 'slice', 'piece', 'can', 'package'
+];
+
+const INGREDIENT_CATEGORIES: IngredientCategory[] = [
+  'Produce', 'Meat & Poultry', 'Seafood', 'Dairy & Eggs', 'Pantry & Oils',
+  'Spices & Seasonings', 'Baking', 'Grains & Pasta', 'Canned & Jarred',
+  'Frozen', 'Beverages', 'Condiments & Sauces'
 ];
 
 export const CustomRecipeModal: React.FC<CustomRecipeModalProps> = ({
@@ -26,19 +33,38 @@ export const CustomRecipeModal: React.FC<CustomRecipeModalProps> = ({
   const [cookTime, setCookTime] = useState(20);
   const [baseServings, setBaseServings] = useState(4);
   const [difficulty, setDifficulty] = useState<'Easy' | 'Medium' | 'Hard'>('Medium');
-  const [ingredients, setIngredients] = useState<Ingredient[]>([]);
-  const [instructions, setInstructions] = useState<string[]>(['']);
+  
+  const [ingredients, setIngredients] = useState<(Ingredient & { amount: number | '' })[]>([]);
+  const [instructions, setInstructions] = useState<{ id: string; text: string }[]>([]);
+  const [images, setImages] = useState<string[]>([]);
 
   useEffect(() => {
     if (recipeToEdit) {
-      setTitle(recipeToEdit.title);
-      setCuisine(recipeToEdit.cuisine);
-      setPrepTime(recipeToEdit.prepTimeMinutes);
-      setCookTime(recipeToEdit.cookTimeMinutes);
-      setBaseServings(recipeToEdit.baseServings);
-      setDifficulty(recipeToEdit.difficulty);
-      setIngredients(recipeToEdit.ingredients);
-      setInstructions(recipeToEdit.instructions);
+      setTitle(recipeToEdit.title || '');
+      setCuisine(recipeToEdit.cuisine || '');
+      setPrepTime(recipeToEdit.prepTimeMinutes || 15);
+      setCookTime(recipeToEdit.cookTimeMinutes || 20);
+      setBaseServings(recipeToEdit.baseServings || 4);
+      setDifficulty(recipeToEdit.difficulty || 'Medium');
+      
+      setIngredients(
+        (recipeToEdit.ingredients || []).map((ing, idx) => ({
+          ...ing,
+          id: ing.id || `${Date.now()}-${idx}`,
+          amount: ing.amount ?? 1,
+          unit: (ing.unit as MeasurementUnit) || 'unit',
+          category: (ing.category as IngredientCategory) || 'Produce',
+        }))
+      );
+
+      setInstructions(
+        (recipeToEdit.instructions || []).map((step, idx) => ({
+          id: `${Date.now()}-${idx}`,
+          text: typeof step === 'string' ? step : (step as any).text || '',
+        }))
+      );
+
+      setImages(recipeToEdit.images || []);
     } else {
       resetForm();
     }
@@ -51,16 +77,18 @@ export const CustomRecipeModal: React.FC<CustomRecipeModalProps> = ({
     setCookTime(20);
     setBaseServings(4);
     setDifficulty('Medium');
-    setIngredients([{ id: '1', name: '', amount: 1, unit: 'g', category: 'Pantry' }]);
-    setInstructions(['']);
+    setIngredients([{ id: '1', name: '', amount: 1, unit: 'unit', category: 'Produce' }]);
+    setInstructions([{ id: '1', text: '' }]);
+    setImages([]);
   };
 
   if (!isOpen) return null;
 
+  // --- Ingredient Handlers ---
   const handleAddIngredient = () => {
     setIngredients([
       ...ingredients,
-      { id: Date.now().toString(), name: '', amount: 1, unit: 'g', category: 'Pantry' },
+      { id: Date.now().toString(), name: '', amount: '', unit: 'unit', category: 'Produce' },
     ]);
   };
 
@@ -74,24 +102,90 @@ export const CustomRecipeModal: React.FC<CustomRecipeModalProps> = ({
     );
   };
 
+  // --- Instruction Handlers ---
+  const handleAddInstruction = () => {
+    setInstructions([...instructions, { id: Date.now().toString(), text: '' }]);
+  };
+
+  const handleRemoveInstruction = (id: string) => {
+    setInstructions(instructions.filter((step) => step.id !== id));
+  };
+
+  const handleInstructionChange = (id: string, text: string) => {
+    setInstructions(instructions.map((step) => (step.id === id ? { ...step, text } : step)));
+  };
+
+  const handleMoveInstruction = (index: number, direction: 'up' | 'down') => {
+    const target = direction === 'up' ? index - 1 : index + 1;
+    if (target < 0 || target >= instructions.length) return;
+    const reordered = [...instructions];
+    const [moved] = reordered.splice(index, 1);
+    reordered.splice(target, 0, moved);
+    setInstructions(reordered);
+  };
+
+  // --- Image Handlers ---
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+
+    Array.from(files).forEach((file) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        if (reader.result) {
+          setImages((prev) => [...prev, reader.result as string]);
+        }
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const handleRemoveImage = (index: number) => {
+    setImages(images.filter((_, idx) => idx !== index));
+  };
+
+  const handleSetCover = (index: number) => {
+    if (index === 0) return;
+    const reordered = [...images];
+    const [selected] = reordered.splice(index, 1);
+    reordered.unshift(selected);
+    setImages(reordered);
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim()) return;
+
+    const formattedIngredients: Ingredient[] = ingredients
+      .filter((i) => i.name.trim() !== '')
+      .map((i) => ({
+        ...i,
+        amount: i.amount === '' ? 1 : Number(i.amount),
+      }));
+
+    const formattedInstructions: InstructionStep[] = instructions
+      .filter((i) => i.text.trim() !== '')
+      .map((i, idx) => ({
+        id: i.id || `${Date.now()}-${idx}`,
+        stepNumber: idx + 1,
+        text: i.text,
+      }));
 
     const recipeData: Recipe = {
       id: recipeToEdit ? recipeToEdit.id : `custom-${Date.now()}`,
       title,
       cuisine,
-      originStory: 'Custom home creation',
-      culturalContext: 'Personal recipe collection',
-      funFact: 'Handcrafted in local Dinerforged workspace',
+      originStory: recipeToEdit?.originStory || 'Custom home creation',
+      culturalContext: recipeToEdit?.culturalContext || 'Personal recipe collection',
+      funFact: recipeToEdit?.funFact || 'Handcrafted in local Dinerforged workspace',
       prepTimeMinutes: prepTime,
       cookTimeMinutes: cookTime,
       baseServings,
       difficulty,
-      ingredients: ingredients.filter((i) => i.name.trim() !== ''),
-      instructions: instructions.filter((i) => i.trim() !== ''),
-      tags: ['Custom', cuisine],
+      ingredients: formattedIngredients,
+      instructions: formattedInstructions,
+      images,
+      tags: recipeToEdit?.tags || ['Custom', cuisine],
       isCustom: true,
     };
 
@@ -107,7 +201,7 @@ export const CustomRecipeModal: React.FC<CustomRecipeModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm overflow-y-auto">
-      <div className="relative w-full max-w-2xl rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-slate-800 dark:bg-slate-900 my-8">
+      <div className="relative w-full max-w-3xl rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-slate-800 dark:bg-slate-900 my-8">
         <div className="flex items-center justify-between border-b pb-4 dark:border-slate-800">
           <h2 className="text-xl font-bold text-slate-900 dark:text-white">
             {recipeToEdit ? 'Edit Custom Recipe' : 'Create Custom Recipe'}
@@ -117,7 +211,8 @@ export const CustomRecipeModal: React.FC<CustomRecipeModalProps> = ({
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="mt-4 space-y-4 max-h-[75vh] overflow-y-auto pr-2">
+        <form onSubmit={handleSubmit} className="mt-4 space-y-6 max-h-[75vh] overflow-y-auto pr-2">
+          
           {/* Title & Cuisine */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
@@ -143,8 +238,8 @@ export const CustomRecipeModal: React.FC<CustomRecipeModalProps> = ({
             </div>
           </div>
 
-          {/* Times & Servings */}
-          <div className="grid grid-cols-3 gap-3">
+          {/* Times, Servings, Difficulty */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             <div>
               <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">Prep (mins)</label>
               <input
@@ -175,64 +270,183 @@ export const CustomRecipeModal: React.FC<CustomRecipeModalProps> = ({
                 className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-white"
               />
             </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">Difficulty</label>
+              <select
+                value={difficulty}
+                onChange={(e) => setDifficulty(e.target.value as any)}
+                className="mt-1 w-full rounded-lg border border-slate-300 px-2 py-2 text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+              >
+                <option value="Easy">Easy</option>
+                <option value="Medium">Medium</option>
+                <option value="Hard">Hard</option>
+              </select>
+            </div>
           </div>
 
-          {/* Ingredients Form */}
+          {/* --- SECTION: IMAGE CRUD --- */}
+          <div className="space-y-2">
+            <label className="block text-sm font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
+              <ImageIcon className="h-4 w-4 text-culinary-500" /> Recipe Images & Cover Photo
+            </label>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {images.map((img, idx) => (
+                <div key={idx} className="relative group rounded-lg overflow-hidden border border-slate-200 dark:border-slate-800 aspect-video">
+                  <img src={img} alt={`Upload ${idx + 1}`} className="w-full h-full object-cover" />
+                  {idx === 0 && (
+                    <span className="absolute top-1 left-1 rounded bg-culinary-500 px-1.5 py-0.5 text-[9px] font-bold text-slate-950 shadow">
+                      Cover
+                    </span>
+                  )}
+                  <div className="absolute inset-0 bg-slate-950/60 opacity-0 group-hover:opacity-100 flex items-center justify-center gap-1.5 transition-opacity">
+                    {idx !== 0 && (
+                      <button
+                        type="button"
+                        onClick={() => handleSetCover(idx)}
+                        title="Set as Cover"
+                        className="p-1 rounded-full bg-white/20 text-amber-400 hover:bg-white/40"
+                      >
+                        <Star className="h-3.5 w-3.5" />
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveImage(idx)}
+                      title="Remove Image"
+                      className="p-1 rounded-full bg-white/20 text-red-400 hover:bg-white/40"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+              <label className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-culinary-500 cursor-pointer p-3 transition-colors aspect-video">
+                <Upload className="h-5 w-5 text-slate-400 mb-1" />
+                <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">Add Image</span>
+                <input type="file" accept="image/*" multiple onChange={handleImageUpload} className="hidden" />
+              </label>
+            </div>
+          </div>
+
+          {/* --- SECTION: INGREDIENTS CRUD --- */}
           <div>
             <div className="flex items-center justify-between mb-2">
               <label className="text-sm font-semibold text-slate-900 dark:text-slate-100">Ingredients</label>
               <button
                 type="button"
                 onClick={handleAddIngredient}
-                className="flex items-center gap-1 text-xs font-medium text-culinary-600 hover:text-culinary-500"
+                className="flex items-center gap-1 text-xs font-medium text-culinary-600 hover:text-culinary-500 dark:text-culinary-400"
               >
                 <Plus className="h-3.5 w-3.5" /> Add Ingredient
               </button>
             </div>
-            {ingredients.map((ing) => (
-              <div key={ing.id} className="flex items-center gap-2 mb-2">
-                <input
-                  type="text"
-                  placeholder="Ingredient name"
-                  value={ing.name}
-                  onChange={(e) => handleIngredientChange(ing.id, 'name', e.target.value)}
-                  className="flex-1 rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs dark:border-slate-700 dark:bg-slate-800 dark:text-white"
-                />
-                <input
-                  type="number"
-                  step="any"
-                  placeholder="Qty"
-                  value={ing.amount}
-                  onChange={(e) => handleIngredientChange(ing.id, 'amount', Number(e.target.value))}
-                  className="w-16 rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs dark:border-slate-700 dark:bg-slate-800 dark:text-white"
-                />
-                <input
-                  type="text"
-                  placeholder="Unit"
-                  value={ing.unit}
-                  onChange={(e) => handleIngredientChange(ing.id, 'unit', e.target.value)}
-                  className="w-16 rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs dark:border-slate-700 dark:bg-slate-800 dark:text-white"
-                />
-                <select
-                  value={ing.category}
-                  onChange={(e) => handleIngredientChange(ing.id, 'category', e.target.value)}
-                  className="rounded-lg border border-slate-300 px-2 py-1.5 text-xs dark:border-slate-700 dark:bg-slate-800 dark:text-white"
-                >
-                  {CATEGORIES.map((cat) => (
-                    <option key={cat} value={cat}>{cat}</option>
-                  ))}
-                </select>
-                <button
-                  type="button"
-                  onClick={() => handleRemoveIngredient(ing.id)}
-                  className="text-red-400 hover:text-red-600"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
-              </div>
-            ))}
+            <div className="space-y-2">
+              {ingredients.map((ing) => (
+                <div key={ing.id} className="grid grid-cols-12 gap-2 items-center">
+                  <input
+                    type="text"
+                    placeholder="Ingredient name"
+                    value={ing.name}
+                    onChange={(e) => handleIngredientChange(ing.id, 'name', e.target.value)}
+                    className="col-span-4 rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                  />
+                  <input
+                    type="number"
+                    step="any"
+                    placeholder="Qty"
+                    value={ing.amount === '' ? '' : ing.amount}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      handleIngredientChange(ing.id, 'amount', val === '' ? '' : parseFloat(val));
+                    }}
+                    className="col-span-2 rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                  />
+                  <select
+                    value={ing.unit}
+                    onChange={(e) => handleIngredientChange(ing.id, 'unit', e.target.value as MeasurementUnit)}
+                    className="col-span-2 rounded-lg border border-slate-300 px-2 py-1.5 text-xs dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                  >
+                    {MEASUREMENT_UNITS.map((u) => (
+                      <option key={u} value={u}>{u}</option>
+                    ))}
+                  </select>
+                  <select
+                    value={ing.category}
+                    onChange={(e) => handleIngredientChange(ing.id, 'category', e.target.value as IngredientCategory)}
+                    className="col-span-3 rounded-lg border border-slate-300 px-2 py-1.5 text-xs dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                  >
+                    {INGREDIENT_CATEGORIES.map((cat) => (
+                      <option key={cat} value={cat}>{cat}</option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveIngredient(ing.id)}
+                    className="col-span-1 text-red-400 hover:text-red-600 flex justify-center"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
+              ))}
+            </div>
           </div>
 
+          {/* --- SECTION: INSTRUCTIONS CRUD --- */}
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <label className="text-sm font-semibold text-slate-900 dark:text-slate-100">Preparation Instructions</label>
+              <button
+                type="button"
+                onClick={handleAddInstruction}
+                className="flex items-center gap-1 text-xs font-medium text-culinary-600 hover:text-culinary-500 dark:text-culinary-400"
+              >
+                <Plus className="h-3.5 w-3.5" /> Add Step
+              </button>
+            </div>
+            <div className="space-y-2">
+              {instructions.map((step, idx) => (
+                <div key={step.id} className="flex items-start gap-2">
+                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-slate-100 dark:bg-slate-800 font-bold text-xs text-slate-700 dark:text-slate-300 mt-1">
+                    {idx + 1}
+                  </span>
+                  <textarea
+                    rows={2}
+                    placeholder={`Step ${idx + 1} instructions...`}
+                    value={step.text}
+                    onChange={(e) => handleInstructionChange(step.id, e.target.value)}
+                    className="flex-1 rounded-lg border border-slate-300 p-2.5 text-xs dark:border-slate-700 dark:bg-slate-800 dark:text-white resize-none"
+                  />
+                  <div className="flex flex-col gap-1 mt-1">
+                    <button
+                      type="button"
+                      disabled={idx === 0}
+                      onClick={() => handleMoveInstruction(idx, 'up')}
+                      className="p-1 text-slate-400 hover:text-slate-600 disabled:opacity-30"
+                    >
+                      <ArrowUp className="h-3.5 w-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      disabled={idx === instructions.length - 1}
+                      onClick={() => handleMoveInstruction(idx, 'down')}
+                      className="p-1 text-slate-400 hover:text-slate-600 disabled:opacity-30"
+                    >
+                      <ArrowDown className="h-3.5 w-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveInstruction(step.id)}
+                      className="p-1 text-slate-400 hover:text-red-500 transition-colors"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Modal Actions */}
           <div className="pt-4 flex justify-end gap-3 border-t dark:border-slate-800">
             <button
               type="button"
