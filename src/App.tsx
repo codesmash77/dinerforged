@@ -9,6 +9,7 @@ import { ShoppingListPage } from './pages/ShoppingListPage';
 import { TechniquesPage } from './pages/TechniquesPage';
 import { AIChefPage } from './pages/AIChefPage';
 import { useTheme } from './hooks/useTheme';
+import { FavoritesPage } from './pages/FavoritesPage';
 
 export const App: React.FC = () => {
   // Initialize dark mode class sync
@@ -30,6 +31,7 @@ export const App: React.FC = () => {
             <Route path="/planner" element={<MealPlannerPage />} />
             <Route path="/shopping" element={<ShoppingListPage />} />
             <Route path="/techniques" element={<TechniquesPage />} />
+            <Route path="/favorites" element={<FavoritesPage />} />
             <Route path="/ai-chef" element={<AIChefPage />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
