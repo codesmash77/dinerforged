@@ -1,11 +1,12 @@
 export type IngredientCategory = 
-  | 'Produce' | 'Meat & Poultry' | 'Seafood' | 'Dairy & Eggs' 
-  | 'Pantry & Oils' | 'Spices & Seasonings' | 'Baking' | 'Grains & Pasta'
-  | 'Canned & Jarred' | 'Frozen' | 'Beverages' | 'Condiments & Sauces';
+  | 'Produce'| 'Meat & Poultry'| 'Meat'| 'Seafood'| 'Dairy & Eggs'| 'Dairy'|
+  'Pantry & Oils'| 'Pantry'| 'Oil & Fat'| 'Spices & Seasonings'| 'Spices'|
+  'Baking'| 'Grains & Pasta'| 'Canned & Jarred'| 'Frozen'| 'Beverages'|
+  'Condiments & Sauces'| 'Leavening'| 'Other'
 
 export type MeasurementUnit = 
   | 'g' | 'kg' | 'oz' | 'lb' 
-  | 'ml' | 'l' | 'tsp' | 'tbsp' | 'cup' | 'fl oz' | 'pt' | 'qt' | 'gal'
+  | 'ml' | 'l' | 'tsp' | 'tbsp' | 'cup' | 'fl oz' | 'pt' | 'qt' | 'gal'| 'pcs'
   | 'pinch' | 'dash' | 'clove' | 'slice' | 'piece' | 'can' | 'package' | 'unit';
 
 export type ScalingType = 'linear' | 'sublinear_spices' | 'sublinear_leavening' | 'fixed_binders';

@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Search, Plus, Sparkles, X, Play, BookOpen, Utensils } from 'lucide-react';
+import { Search, Plus, X, Play } from 'lucide-react';
 import { recipes as seedRecipes } from '../data/recipes';
 import { Recipe } from '../types';
 import { useAppStore } from '../store/useAppStore';
@@ -175,7 +175,7 @@ export const RecipesPage: React.FC = () => {
                       <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-culinary-500/20 text-xs font-bold text-culinary-600 dark:text-culinary-400">
                         {idx + 1}
                       </span>
-                      <span>{step}</span>
+                      <span>{typeof step === 'string' ? step : step.text}</span>
                     </li>
                   ))}
                 </ol>

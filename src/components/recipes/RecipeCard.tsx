@@ -13,8 +13,8 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, onSelect, onEdit
   const { savedRecipeIds, toggleSaveRecipe, deleteCustomRecipe } = useAppStore();
   const isBookmarked = savedRecipeIds.includes(recipe.id);
 
-  // Resolve cover image from images array or imageUrl fallback
-  const coverImage = recipe.imageUrl?.[0] || recipe.imageUrl|| 'https://images.unsplash.com/photo-1495521821757-a1efb6729352?auto=format&fit=crop&w=800&q=80';
+  // Resolve cover image from imageUrl string fallback
+  const coverImage = recipe.imageUrl || 'https://images.unsplash.com/photo-1495521821757-a1efb6729352?auto=format&fit=crop&w=800&q=80';
 
   const handleDelete = (e: React.MouseEvent) => {
     e.stopPropagation();

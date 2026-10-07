@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Plus, Trash2, ArrowUp, ArrowDown, Image as ImageIcon, Upload, Star } from 'lucide-react';
+import { X, Plus, Trash2, ArrowUp, ArrowDown, Image as ImageIcon, Upload } from 'lucide-react';
 import { Recipe, Ingredient, InstructionStep, MeasurementUnit, IngredientCategory } from '../../types';
 import { useAppStore } from '../../store/useAppStore';
 
@@ -11,13 +11,14 @@ interface CustomRecipeModalProps {
 
 const MEASUREMENT_UNITS: MeasurementUnit[] = [
   'unit', 'g', 'kg', 'oz', 'lb', 'ml', 'l', 'tsp', 'tbsp', 'cup',
-  'fl oz', 'pt', 'qt', 'gal', 'pinch', 'dash', 'clove', 'slice', 'piece', 'can', 'package'
+  'fl oz', 'pt', 'qt', 'gal', 'pinch', 'dash', 'clove', 'slice', 'piece', 'pcs', 'can', 'package'
 ];
 
 const INGREDIENT_CATEGORIES: IngredientCategory[] = [
-  'Produce', 'Meat & Poultry', 'Seafood', 'Dairy & Eggs', 'Pantry & Oils',
-  'Spices & Seasonings', 'Baking', 'Grains & Pasta', 'Canned & Jarred',
-  'Frozen', 'Beverages', 'Condiments & Sauces'
+  'Produce', 'Meat & Poultry', 'Meat', 'Seafood', 'Dairy & Eggs', 'Dairy',
+  'Pantry & Oils', 'Pantry', 'Oil & Fat', 'Spices & Seasonings', 'Spices',
+  'Baking', 'Grains & Pasta', 'Canned & Jarred', 'Frozen', 'Beverages',
+  'Condiments & Sauces', 'Leavening', 'Other'
 ];
 
 export const CustomRecipeModal: React.FC<CustomRecipeModalProps> = ({
@@ -36,7 +37,7 @@ export const CustomRecipeModal: React.FC<CustomRecipeModalProps> = ({
   
   const [ingredients, setIngredients] = useState<(Ingredient & { amount: number | '' })[]>([]);
   const [instructions, setInstructions] = useState<{ id: string; text: string }[]>([]);
-  const [images, setImages] = useState<string[]>([]);
+  const [imageUrl, setImageUrl] = useState<string>('');
 
   useEffect(() => {
     if (recipeToEdit) {
@@ -64,7 +65,7 @@ export const CustomRecipeModal: React.FC<CustomRecipeModalProps> = ({
         }))
       );
 
-      setImages(recipeToEdit.images || []);
+      setImageUrl(recipeToEdit.imageUrl || '');
     } else {
       resetForm();
     }
@@ -79,7 +80,7 @@ export const CustomRecipeModal: React.FC<CustomRecipeModalProps> = ({
     setDifficulty('Medium');
     setIngredients([{ id: '1', name: '', amount: 1, unit: 'unit', category: 'Produce' }]);
     setInstructions([{ id: '1', text: '' }]);
-    setImages([]);
+    setImageUrl('');
   };
 
   if (!isOpen) return null;
@@ -124,32 +125,18 @@ export const CustomRecipeModal: React.FC<CustomRecipeModalProps> = ({
     setInstructions(reordered);
   };
 
-  // --- Image Handlers ---
+  // --- Image Handler ---
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files) return;
+    const file = e.target.files?.[0];
+    if (!file) return;
 
-    Array.from(files).forEach((file) => {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        if (reader.result) {
-          setImages((prev) => [...prev, reader.result as string]);
-        }
-      };
-      reader.readAsDataURL(file);
-    });
-  };
-
-  const handleRemoveImage = (index: number) => {
-    setImages(images.filter((_, idx) => idx !== index));
-  };
-
-  const handleSetCover = (index: number) => {
-    if (index === 0) return;
-    const reordered = [...images];
-    const [selected] = reordered.splice(index, 1);
-    reordered.unshift(selected);
-    setImages(reordered);
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      if (reader.result) {
+        setImageUrl(reader.result as string);
+      }
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -184,7 +171,7 @@ export const CustomRecipeModal: React.FC<CustomRecipeModalProps> = ({
       difficulty,
       ingredients: formattedIngredients,
       instructions: formattedInstructions,
-      images,
+      imageUrl,
       tags: recipeToEdit?.tags || ['Custom', cuisine],
       isCustom: true,
     };
@@ -284,46 +271,28 @@ export const CustomRecipeModal: React.FC<CustomRecipeModalProps> = ({
             </div>
           </div>
 
-          {/* --- SECTION: IMAGE CRUD --- */}
+          {/* --- SECTION: IMAGE UPLOAD --- */}
           <div className="space-y-2">
             <label className="block text-sm font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
-              <ImageIcon className="h-4 w-4 text-culinary-500" /> Recipe Images & Cover Photo
+              <ImageIcon className="h-4 w-4 text-culinary-500" /> Recipe Cover Image
             </label>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              {images.map((img, idx) => (
-                <div key={idx} className="relative group rounded-lg overflow-hidden border border-slate-200 dark:border-slate-800 aspect-video">
-                  <img src={img} alt={`Upload ${idx + 1}`} className="w-full h-full object-cover" />
-                  {idx === 0 && (
-                    <span className="absolute top-1 left-1 rounded bg-culinary-500 px-1.5 py-0.5 text-[9px] font-bold text-slate-950 shadow">
-                      Cover
-                    </span>
-                  )}
-                  <div className="absolute inset-0 bg-slate-950/60 opacity-0 group-hover:opacity-100 flex items-center justify-center gap-1.5 transition-opacity">
-                    {idx !== 0 && (
-                      <button
-                        type="button"
-                        onClick={() => handleSetCover(idx)}
-                        title="Set as Cover"
-                        className="p-1 rounded-full bg-white/20 text-amber-400 hover:bg-white/40"
-                      >
-                        <Star className="h-3.5 w-3.5" />
-                      </button>
-                    )}
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveImage(idx)}
-                      title="Remove Image"
-                      className="p-1 rounded-full bg-white/20 text-red-400 hover:bg-white/40"
-                    >
-                      <X className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
+            <div className="flex items-center gap-4">
+              {imageUrl ? (
+                <div className="relative w-32 h-20 rounded-lg overflow-hidden border border-slate-300 dark:border-slate-700">
+                  <img src={imageUrl} alt="Recipe Preview" className="w-full h-full object-cover" />
+                  <button
+                    type="button"
+                    onClick={() => setImageUrl('')}
+                    className="absolute top-1 right-1 rounded-full bg-slate-950/70 p-1 text-red-400 hover:bg-red-600 hover:text-white"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
                 </div>
-              ))}
-              <label className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-culinary-500 cursor-pointer p-3 transition-colors aspect-video">
+              ) : null}
+              <label className="flex-1 flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-culinary-500 cursor-pointer p-4 transition-colors">
                 <Upload className="h-5 w-5 text-slate-400 mb-1" />
-                <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">Add Image</span>
-                <input type="file" accept="image/*" multiple onChange={handleImageUpload} className="hidden" />
+                <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">Click to upload recipe image</span>
+                <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
               </label>
             </div>
           </div>
