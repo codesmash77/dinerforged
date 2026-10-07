@@ -2,13 +2,24 @@ import React, { useState } from 'react';
 import { ShoppingCart, CheckSquare, Square, Trash2, Printer, Copy, Check } from 'lucide-react';
 import { useAppStore } from '../store/useAppStore';
 import { aggregateRecipeIngredients } from '../utils/aggregator';
+import { Recipe } from '../types';
 
 export const ShoppingListPage: React.FC = () => {
   const { weeklyPlan, checkedShoppingItems, toggleShoppingItem, clearCheckedShoppingItems } = useAppStore();
   const [copied, setCopied] = useState(false);
 
-  // Flatten weekly plan recipes to aggregate ingredients
-  const allWeeklyRecipes = Object.values(weeklyPlan || {}).filter(Boolean) as any[];
+  // Safely extract all recipes assigned across all days and meal slots in the weekly plan
+  const allWeeklyRecipes: Recipe[] = [];
+  if (weeklyPlan) {
+    Object.values(weeklyPlan).forEach((dayMeals) => {
+      if (dayMeals) {
+        if (dayMeals.breakfast) allWeeklyRecipes.push(dayMeals.breakfast);
+        if (dayMeals.lunch) allWeeklyRecipes.push(dayMeals.lunch);
+        if (dayMeals.dinner) allWeeklyRecipes.push(dayMeals.dinner);
+      }
+    });
+  }
+
   const aggregatedByCategory = aggregateRecipeIngredients(allWeeklyRecipes);
 
   // Calculate totals
