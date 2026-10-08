@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { UtensilsCrossed, Calendar, ShoppingCart, Sparkles, Menu, Download } from 'lucide-react';
+import { UtensilsCrossed, Calendar, ShoppingCart, Globe, Menu, Download } from 'lucide-react';
 import { usePWAInstall } from '../../hooks/usePWAInstall';
 import { MobileDrawer } from './MobileDrawer';
 
@@ -13,7 +13,7 @@ export const MobileNav: React.FC = () => {
     { to: '/', label: 'Recipes', icon: UtensilsCrossed },
     { to: '/planner', label: 'Planner', icon: Calendar },
     { to: '/shopping', label: 'Shopping', icon: ShoppingCart },
-    { to: '/ai-chef', label: 'AI Chef', icon: Sparkles },
+     { to: '/explore', label: 'Explore Global Recipes', icon: Globe },
   ];
 
   // Dynamic grid column calculation: Core links + Menu Drawer toggle + Optional PWA install
