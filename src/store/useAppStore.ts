@@ -38,11 +38,14 @@ interface AppState {
   addCustomUtensil: (utensil: Utensil) => void;
   updateCustomUtensil: (id: string, updatedFields: Partial<Utensil>) => void;
   deleteCustomUtensil: (id: string) => void;
+
+  // Maintenance Utility to purge corrupted custom recipes while preserving bookmarks
+  purgeCorruptedRecipes: () => void;
 }
 
 export const useAppStore = create<AppState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       // Theme
       darkMode: false,
       toggleDarkMode: () => set((state) => ({ darkMode: !state.darkMode })),
@@ -51,7 +54,10 @@ export const useAppStore = create<AppState>()(
       customRecipes: [],
       addCustomRecipe: (newRecipe) =>
         set((state) => ({
-          customRecipes: [newRecipe, ...state.customRecipes],
+          customRecipes: [
+            { ...newRecipe, id: newRecipe.id || `custom-${Date.now()}` },
+            ...state.customRecipes.filter((r) => r.id !== newRecipe.id),
+          ],
         })),
       updateCustomRecipe: (id, updatedFields) =>
         set((state) => ({
@@ -61,11 +67,13 @@ export const useAppStore = create<AppState>()(
         })),
       deleteCustomRecipe: (id) =>
         set((state) => ({
+          // Removes from custom recipes, allowing pre-populated or custom items to be cleared
           customRecipes: state.customRecipes.filter((r) => r.id !== id),
+          // Also explicitly ensure bookmark IDs remain clean or intact as desired
           savedRecipeIds: state.savedRecipeIds.filter((savedId) => savedId !== id),
         })),
 
-      // Saved Bookmarks
+      // Saved Bookmarks (Protected during data purges)
       savedRecipeIds: [],
       toggleSaveRecipe: (id) =>
         set((state) => ({
@@ -135,10 +143,31 @@ export const useAppStore = create<AppState>()(
         set((state) => ({
           customUtensils: state.customUtensils.filter((u) => u.id !== id),
         })),
+
+      // Purge Corrupted Storage without touching saved bookmarks
+      purgeCorruptedRecipes: () => {
+        const state = get();
+        const validRecipes = (state.customRecipes || []).filter(
+          (r) => r && typeof r === 'object' && r.id && r.title && Array.isArray(r.ingredients)
+        );
+        set({ customRecipes: validRecipes });
+      },
     }),
     {
       name: 'dinerforged-v2-storage',
       storage: createJSONStorage(() => localStorage),
+      version: 2,
+      migrate: (persistedState: any, version) => {
+        if (version < 2) {
+          // Clean legacy or malformed recipe entries on migration while preserving saved bookmarks
+          if (persistedState && persistedState.customRecipes) {
+            persistedState.customRecipes = persistedState.customRecipes.filter(
+              (r: any) => r && typeof r === 'object' && r.id && r.title && Array.isArray(r.ingredients)
+            );
+          }
+        }
+        return persistedState as AppState;
+      },
     }
   )
 );
