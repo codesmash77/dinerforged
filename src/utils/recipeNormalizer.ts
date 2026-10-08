@@ -1,4 +1,4 @@
-import { estimateNutrition, NutritionInfo } from './nutritionCalculator';
+import { estimateNutrition } from './nutritionCalculator';
 import { Recipe, Ingredient, InstructionStep, IngredientCategory, MeasurementUnit } from '../types';
 
 export function normalizeMealDbRecipe(meal: any): Recipe {
@@ -52,7 +52,6 @@ export function normalizeMealDbRecipe(meal: any): Recipe {
     }
   }
 
-  // Parse multi-line instructions safely into structured step objects
   const rawInstructions = meal.strInstructions || '';
   const instructionLines = rawInstructions
     .split(/\r?\n/)
@@ -66,8 +65,6 @@ export function normalizeMealDbRecipe(meal: any): Recipe {
     stepNumber: idx + 1,
     text,
   }));
-
-  const nutrition = estimateNutrition(rawIngredientStrings);
 
   return {
     id: `mealdb-${meal.idMeal}`,
@@ -84,7 +81,6 @@ export function normalizeMealDbRecipe(meal: any): Recipe {
     instructions: formattedInstructions,
     imageUrl: meal.strMealThumb || 'https://images.unsplash.com/photo-1495521821757-a1efb6729352?auto=format&fit=crop&w=800&q=80',
     tags: [meal.strCategory || 'Global', meal.strArea || 'World'],
-    nutrition,
     isCustom: true,
   };
 }
