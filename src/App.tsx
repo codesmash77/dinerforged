@@ -9,6 +9,7 @@ import { ShoppingListPage } from './pages/ShoppingListPage';
 import { TechniquesPage } from './pages/TechniquesPage';
 import { AIChefPage } from './pages/AIChefPage';
 import { FavoritesPage } from './pages/FavoritesPage';
+import { LegalPage } from './pages/LegalPage';
 import { useTheme } from './hooks/useTheme';
 import { IOSInstallPrompt } from './components/pwa/IOSInstallPrompt';
 import { SmartKitchenAssistant } from './components/timers/SmartKitchenAssistant';
@@ -35,6 +36,7 @@ export const App: React.FC = () => {
             <Route path="/techniques" element={<TechniquesPage />} />
             <Route path="/favorites" element={<FavoritesPage />} />
             <Route path="/ai-chef" element={<AIChefPage />} />
+            <Route path="/legal" element={<LegalPage />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </main>
