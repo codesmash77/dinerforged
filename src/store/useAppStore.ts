@@ -35,18 +35,13 @@ interface AppState {
   updateCustomUtensil: (id: string, updatedFields: Partial<Utensil>) => void;
   deleteCustomUtensil: (id: string) => void;
 
-        // Safe Purge: Only clears custom recipes and deleted IDs, leaving bookmarks & preferences intact!
-      purgeAndResetStorage: () => {
-        set({
-          customRecipes: [],
-          deletedRecipeIds: [],
-        });
-      },
-
+  // Safe Purge: Only clears custom recipes and deleted IDs, leaving bookmarks & preferences intact!
+  purgeAndResetStorage: () => void;
+}
 
 export const useAppStore = create<AppState>()(
   persist(
-    (set, get) => ({
+    (set) => ({
       darkMode: false,
       toggleDarkMode: () => set((state) => ({ darkMode: !state.darkMode })),
 
@@ -147,8 +142,6 @@ export const useAppStore = create<AppState>()(
           customRecipes: [],
           deletedRecipeIds: [],
         });
-        localStorage.removeItem('dinerforged-v2-storage');
-        window.location.reload();
       },
     }),
     {
