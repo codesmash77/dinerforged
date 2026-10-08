@@ -74,13 +74,15 @@ export const ShoppingListPage: React.FC = () => {
 
   const aggregatedByCategory = aggregateRecipeIngredients(allWeeklyRecipes);
 
-  // Merge custom items into categorized list
+  // Merge custom items into categorized list with strict string typing for amount
   const combinedCategories: Record<string, Array<{ name: string; amount: string; unit: string; id: string }>> = {};
 
-  // First, populate from meal planner
+  // First, populate from meal planner (mapping amount number/string to string)
   Object.entries(aggregatedByCategory).forEach(([cat, items]) => {
     combinedCategories[cat] = items.map((item, idx) => ({
-      ...item,
+      name: item.name,
+      amount: String(item.amount ?? '1'),
+      unit: item.unit ?? '',
       id: `planner-${cat}-${idx}-${item.name}`,
     }));
   });
@@ -180,7 +182,7 @@ export const ShoppingListPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Quick-Add Ad-Hoc Item Form (Always Visible!) */}
+      {/* Quick-Add Ad-Hoc Item Form */}
       <div className="mb-8 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900 print:hidden">
         <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-3">Add Shopping Item</h3>
         <form onSubmit={handleAddCustomItem} className="grid grid-cols-1 sm:grid-cols-12 gap-3">
@@ -220,7 +222,7 @@ export const ShoppingListPage: React.FC = () => {
           <div className="flex justify-between items-center text-sm font-bold text-slate-900 dark:text-white mb-2">
             <span>Checklist Progress</span>
             <span className="text-culinary-600 dark:text-culinary-400">
-              {checkedCount} / {totalItemsCount} items ({progressPercentage}%)
+              {checkedCount} / {totalItemsCount} items ({percentageString(checkedCount, totalItemsCount)}%)
             </span>
           </div>
           <div className="h-3 w-full rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
@@ -232,7 +234,7 @@ export const ShoppingListPage: React.FC = () => {
         </div>
       )}
 
-      {/* Empty State (Only if both Meal Planner and Custom Items are empty) */}
+      {/* Empty State */}
       {totalItemsCount === 0 && (
         <div className="rounded-2xl border border-dashed border-slate-300 p-12 text-center dark:border-slate-800 my-6">
           <ShoppingCart className="mx-auto h-12 w-12 text-slate-400 mb-3" />
@@ -305,3 +307,7 @@ export const ShoppingListPage: React.FC = () => {
     </div>
   );
 };
+
+function percentageString(checked: number, total: number) {
+  return total > 0 ? Math.round((checked / total) * 100) : 0;
+}
