@@ -1,14 +1,66 @@
-import React, { useState } from 'react';
-import { ShoppingCart, CheckSquare, Square, Trash2, Printer, Copy, Check } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { ShoppingCart, CheckSquare, Square, Trash2, Printer, Copy, Check, Plus } from 'lucide-react';
 import { useAppStore } from '../store/useAppStore';
 import { aggregateRecipeIngredients } from '../utils/aggregator';
 import { Recipe } from '../types';
+
+interface CustomShoppingItem {
+  id: string;
+  name: string;
+  category: string;
+  amount: string;
+  unit: string;
+}
 
 export const ShoppingListPage: React.FC = () => {
   const { weeklyPlan, checkedShoppingItems, toggleShoppingItem, clearCheckedShoppingItems } = useAppStore();
   const [copied, setCopied] = useState(false);
 
-  // Safely extract all recipes assigned across all days and meal slots in the weekly plan
+  // Ad-hoc manual items state
+  const [customItems, setCustomItems] = useState<CustomShoppingItem[]>(() => {
+    try {
+      const saved = localStorage.getItem('dinerforged_custom_shopping');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const [newItemName, setNewItemName] = useState('');
+  const [newItemCategory, setNewItemCategory] = useState('Pantry & Household');
+  const [newItemAmount, setNewItemAmount] = useState('1');
+  const [newItemUnit, setNewItemUnit] = useState('item');
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('dinerforged_custom_shopping', JSON.stringify(customItems));
+    } catch (e) {
+      console.error('Failed to save custom shopping items:', e);
+    }
+  }, [customItems]);
+
+  const handleAddCustomItem = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newItemName.trim()) return;
+
+    const newItem: CustomShoppingItem = {
+      id: `custom-${Date.now()}`,
+      name: newItemName.trim(),
+      category: newItemCategory.trim() || 'Pantry & Household',
+      amount: newItemAmount.trim() || '1',
+      unit: newItemUnit.trim() || '',
+    };
+
+    setCustomItems([newItem, ...customItems]);
+    setNewItemName('');
+  };
+
+  const handleRemoveCustomItem = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setCustomItems(customItems.filter((item) => item.id !== id));
+  };
+
+  // Safely extract all recipes assigned across the weekly plan
   const allWeeklyRecipes: Recipe[] = [];
   if (weeklyPlan) {
     Object.values(weeklyPlan).forEach((dayMeals) => {
@@ -22,15 +74,39 @@ export const ShoppingListPage: React.FC = () => {
 
   const aggregatedByCategory = aggregateRecipeIngredients(allWeeklyRecipes);
 
-  // Calculate totals
+  // Merge custom items into categorized list
+  const combinedCategories: Record<string, Array<{ name: string; amount: string; unit: string; id: string }>> = {};
+
+  // First, populate from meal planner
+  Object.entries(aggregatedByCategory).forEach(([cat, items]) => {
+    combinedCategories[cat] = items.map((item, idx) => ({
+      ...item,
+      id: `planner-${cat}-${idx}-${item.name}`,
+    }));
+  });
+
+  // Next, merge custom items
+  customItems.forEach((item) => {
+    const cat = item.category;
+    if (!combinedCategories[cat]) {
+      combinedCategories[cat] = [];
+    }
+    combinedCategories[cat].push({
+      name: item.name,
+      amount: item.amount,
+      unit: item.unit,
+      id: item.id,
+    });
+  });
+
+  // Calculate totals and progress
   let totalItemsCount = 0;
   let checkedCount = 0;
 
-  Object.entries(aggregatedByCategory).forEach(([category, items]) => {
-    items.forEach((item, idx) => {
+  Object.values(combinedCategories).forEach((items) => {
+    items.forEach((item) => {
       totalItemsCount++;
-      const itemId = `${category}-${idx}-${item.name}`;
-      if (checkedShoppingItems[itemId]) {
+      if (checkedShoppingItems[item.id]) {
         checkedCount++;
       }
     });
@@ -40,12 +116,11 @@ export const ShoppingListPage: React.FC = () => {
 
   const handleCopyTextList = () => {
     let text = '🛒 Dinerforged Shopping List\n\n';
-    Object.entries(aggregatedByCategory).forEach(([category, items]) => {
+    Object.entries(combinedCategories).forEach(([category, items]) => {
       if (items.length > 0) {
         text += `--- ${category.toUpperCase()} ---\n`;
-        items.forEach((item, idx) => {
-          const itemId = `${category}-${idx}-${item.name}`;
-          const isDone = checkedShoppingItems[itemId] ? '[x]' : '[ ]';
+        items.forEach((item) => {
+          const isDone = checkedShoppingItems[item.id] ? '[x]' : '[ ]';
           text += `${isDone} ${item.name}: ${item.amount} ${item.unit}\n`;
         });
         text += '\n';
@@ -63,24 +138,24 @@ export const ShoppingListPage: React.FC = () => {
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8 pb-24 print:p-0">
-      {/* Printable Header */}
+      {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8 print:mb-4">
         <div>
           <h1 className="text-3xl font-display font-bold text-slate-900 dark:text-white print:text-black">
-            Aggregated Shopping List
+            Smart Grocery List
           </h1>
           <p className="text-sm text-slate-600 dark:text-slate-400 mt-1 print:hidden">
-            Normalized ingredient list auto-generated from your meal planner.
+            Auto-generated from your meal planner combined with your manual ad-hoc items.
           </p>
         </div>
 
-        <div className="flex items-center gap-3 print:hidden">
+        <div className="flex flex-wrap items-center gap-3 print:hidden">
           <button
             onClick={handleCopyTextList}
             className="flex items-center gap-2 rounded-xl border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800 transition-colors"
           >
             {copied ? <Check className="h-4 w-4 text-emerald-500" /> : <Copy className="h-4 w-4" />}
-            <span>{copied ? 'Copied to Clipboard' : 'Copy List'}</span>
+            <span>{copied ? 'Copied' : 'Copy List'}</span>
           </button>
 
           <button
@@ -95,13 +170,47 @@ export const ShoppingListPage: React.FC = () => {
               onClick={clearCheckedShoppingItems}
               className="flex items-center gap-2 rounded-xl border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800 transition-colors"
             >
-              <Trash2 className="h-4 w-4 text-red-400" /> Reset Checkbox State
+              <Trash2 className="h-4 w-4 text-red-400" /> Reset Checks
             </button>
           )}
         </div>
       </div>
 
-      {/* Progress Bar (Hidden during printing) */}
+      {/* Quick-Add Ad-Hoc Item Form (Hidden during print) */}
+      <div className="mb-8 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900 print:hidden">
+        <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-3">Add Custom Item</h3>
+        <form onSubmit={handleAddCustomItem} className="grid grid-cols-1 sm:grid-cols-12 gap-3">
+          <input
+            type="text"
+            value={newItemName}
+            onChange={(e) => setNewItemName(e.target.value)}
+            placeholder="Item name (e.g., Paper towels, Espresso)..."
+            className="sm:col-span-5 rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-sm text-slate-900 focus:bg-white focus:border-culinary-500 focus:outline-none dark:border-slate-800 dark:bg-slate-950 dark:text-white"
+          />
+          <input
+            type="text"
+            value={newItemCategory}
+            onChange={(e) => setNewItemCategory(e.target.value)}
+            placeholder="Category (e.g., Household)"
+            className="sm:col-span-3 rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-sm text-slate-900 focus:bg-white focus:border-culinary-500 focus:outline-none dark:border-slate-800 dark:bg-slate-950 dark:text-white"
+          />
+          <input
+            type="text"
+            value={newItemAmount}
+            onChange={(e) => setNewItemAmount(e.target.value)}
+            placeholder="Qty"
+            className="sm:col-span-2 rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-sm text-slate-900 focus:bg-white focus:border-culinary-500 focus:outline-none dark:border-slate-800 dark:bg-slate-950 dark:text-white"
+          />
+          <button
+            type="submit"
+            className="sm:col-span-2 flex items-center justify-center gap-1.5 rounded-xl bg-culinary-500 px-4 py-2.5 text-xs font-bold text-slate-950 hover:bg-culinary-400 transition-colors shadow-sm"
+          >
+            <Plus className="h-4 w-4" /> Add
+          </button>
+        </form>
+      </div>
+
+      {/* Progress Bar */}
       {totalItemsCount > 0 && (
         <div className="mb-8 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900 print:hidden">
           <div className="flex justify-between items-center text-sm font-bold text-slate-900 dark:text-white mb-2">
@@ -125,14 +234,14 @@ export const ShoppingListPage: React.FC = () => {
           <ShoppingCart className="mx-auto h-12 w-12 text-slate-400 mb-3" />
           <h3 className="text-lg font-bold text-slate-900 dark:text-white">Your Shopping List is Empty</h3>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-            Assign recipes to your Meal Planner to automatically generate your categorized grocery list.
+            Add manual items above or assign recipes to your Meal Planner to populate your grocery list.
           </p>
         </div>
       )}
 
-      {/* Categorized Grocery List */}
+      {/* Categorized List */}
       <div className="space-y-6">
-        {Object.entries(aggregatedByCategory).map(([category, items]) => {
+        {Object.entries(combinedCategories).map(([category, items]) => {
           if (!items || items.length === 0) return null;
 
           return (
@@ -145,15 +254,15 @@ export const ShoppingListPage: React.FC = () => {
               </h3>
 
               <div className="divide-y divide-slate-100 dark:divide-slate-800">
-                {items.map((item, idx) => {
-                  const itemId = `${category}-${idx}-${item.name}`;
-                  const isChecked = !!checkedShoppingItems[itemId];
+                {items.map((item) => {
+                  const isChecked = !!checkedShoppingItems[item.id];
+                  const isCustom = item.id.startsWith('custom-');
 
                   return (
                     <div
-                      key={itemId}
-                      onClick={() => toggleShoppingItem(itemId)}
-                      className={`flex items-center justify-between py-3 cursor-pointer select-none transition-colors ${
+                      key={item.id}
+                      onClick={() => toggleShoppingItem(item.id)}
+                      className={`flex items-center justify-between py-3 cursor-pointer select-none transition-colors group ${
                         isChecked ? 'opacity-50 line-through' : ''
                       }`}
                     >
@@ -161,16 +270,26 @@ export const ShoppingListPage: React.FC = () => {
                         <button className="text-culinary-500 print:hidden">
                           {isChecked ? <CheckSquare className="h-5 w-5" /> : <Square className="h-5 w-5 text-slate-400" />}
                         </button>
-                        <div>
-                          <span className="text-sm font-semibold text-slate-900 dark:text-white print:text-black">
-                            {item.name}
-                          </span>
-                        </div>
+                        <span className="text-sm font-semibold text-slate-900 dark:text-white print:text-black">
+                          {item.name}
+                        </span>
                       </div>
 
-                      <span className="text-sm font-bold text-culinary-600 dark:text-culinary-400 print:text-black">
-                        {item.amount} {item.unit}
-                      </span>
+                      <div className="flex items-center gap-3">
+                        <span className="text-sm font-bold text-culinary-600 dark:text-culinary-400 print:text-black">
+                          {item.amount} {item.unit}
+                        </span>
+
+                        {isCustom && (
+                          <button
+                            onClick={(e) => handleRemoveCustomItem(item.id.replace('custom-', ''), e)}
+                            title="Delete custom item"
+                            className="text-slate-400 hover:text-red-400 transition-colors print:hidden p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        )}
+                      </div>
                     </div>
                   );
                 })}
