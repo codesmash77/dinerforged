@@ -11,7 +11,6 @@ interface AppState {
   updateCustomRecipe: (id: string, updatedFields: Partial<Recipe>) => void;
   deleteCustomRecipe: (id: string) => void;
 
-  // Track deleted pre-populated or custom recipe IDs
   deletedRecipeIds: string[];
 
   savedRecipeIds: string[];
@@ -35,7 +34,6 @@ interface AppState {
   updateCustomUtensil: (id: string, updatedFields: Partial<Utensil>) => void;
   deleteCustomUtensil: (id: string) => void;
 
-  // Safe Purge: Only clears custom recipes and deleted IDs, leaving bookmarks & preferences intact!
   purgeAndResetStorage: () => void;
 }
 
@@ -52,32 +50,36 @@ export const useAppStore = create<AppState>()(
             { ...newRecipe, id: newRecipe.id || `custom-${Date.now()}` },
             ...state.customRecipes.filter((r) => r.id !== newRecipe.id),
           ],
-          deletedRecipeIds: state.deletedRecipeIds.filter((id) => id !== newRecipe.id),
+          deletedRecipeIds: (state.deletedRecipeIds || []).filter((id) => id !== newRecipe.id),
         })),
 
       updateCustomRecipe: (id, updatedFields) =>
         set((state) => ({
-          customRecipes: state.customRecipes.map((r) =>
+          customRecipes: (state.customRecipes || []).map((r) =>
             r.id === id ? { ...r, ...updatedFields } : r
           ),
         })),
 
       deleteCustomRecipe: (id) =>
         set((state) => ({
-          customRecipes: state.customRecipes.filter((r) => r.id !== id),
-          deletedRecipeIds: [...new Set([...state.deletedRecipeIds, id])],
-          savedRecipeIds: state.savedRecipeIds.filter((savedId) => savedId !== id),
+          customRecipes: (state.customRecipes || []).filter((r) => r.id !== id),
+          deletedRecipeIds: [...new Set([...(state.deletedRecipeIds || []), id])],
+          // Keep savedRecipeIds intact unless explicitly unsaved by the user
         })),
 
       deletedRecipeIds: [],
 
       savedRecipeIds: [],
       toggleSaveRecipe: (id) =>
-        set((state) => ({
-          savedRecipeIds: state.savedRecipeIds.includes(id)
-            ? state.savedRecipeIds.filter((rId) => rId !== id)
-            : [...state.savedRecipeIds, id],
-        })),
+        set((state) => {
+          const currentSaved = state.savedRecipeIds || [];
+          const exists = currentSaved.includes(id);
+          return {
+            savedRecipeIds: exists
+              ? currentSaved.filter((rId) => rId !== id)
+              : [...currentSaved, id],
+          };
+        }),
 
       weeklyPlan: { mon: {}, tue: {}, wed: {}, thu: {}, fri: {}, sat: {}, sun: {} },
       setMealPlanSlot: (day, mealType, recipe) =>
@@ -85,7 +87,7 @@ export const useAppStore = create<AppState>()(
           weeklyPlan: {
             ...state.weeklyPlan,
             [day]: {
-              ...state.weeklyPlan[day],
+              ...(state.weeklyPlan?.[day] || {}),
               [mealType]: recipe,
             },
           },
@@ -99,8 +101,8 @@ export const useAppStore = create<AppState>()(
       toggleShoppingItem: (id) =>
         set((state) => ({
           checkedShoppingItems: {
-            ...state.checkedShoppingItems,
-            [id]: !state.checkedShoppingItems[id],
+            ...(state.checkedShoppingItems || {}),
+            [id]: !state.checkedShoppingItems?.[id],
           },
         })),
       clearCheckedShoppingItems: () => set({ checkedShoppingItems: {} }),
@@ -108,58 +110,64 @@ export const useAppStore = create<AppState>()(
       customTechniques: [],
       addCustomTechnique: (newTechnique) =>
         set((state) => ({
-          customTechniques: [newTechnique, ...state.customTechniques],
+          customTechniques: [newTechnique, ...(state.customTechniques || [])],
         })),
       updateCustomTechnique: (id, updatedFields) =>
         set((state) => ({
-          customTechniques: state.customTechniques.map((t) =>
+          customTechniques: (state.customTechniques || []).map((t) =>
             t.id === id ? { ...t, ...updatedFields } : t
           ),
         })),
       deleteCustomTechnique: (id) =>
         set((state) => ({
-          customTechniques: state.customTechniques.filter((t) => t.id !== id),
+          customTechniques: (state.customTechniques || []).filter((t) => t.id !== id),
         })),
 
       customUtensils: [],
       addCustomUtensil: (newUtensil) =>
         set((state) => ({
-          customUtensils: [newUtensil, ...state.customUtensils],
+          customUtensils: [newUtensil, ...(state.customUtensils || [])],
         })),
       updateCustomUtensil: (id, updatedFields) =>
         set((state) => ({
-          customUtensils: state.customUtensils.map((u) =>
+          customUtensils: (state.customUtensils || []).map((u) =>
             u.id === id ? { ...u, ...updatedFields } : u
           ),
         })),
       deleteCustomUtensil: (id) =>
         set((state) => ({
-          customUtensils: state.customUtensils.filter((u) => u.id !== id),
+          customUtensils: (state.customUtensils || []).filter((u) => u.id !== id),
         })),
 
       purgeAndResetStorage: () => {
-        set({
+        set((state) => ({
           customRecipes: [],
           deletedRecipeIds: [],
-        });
+          // savedRecipeIds is strictly preserved here!
+        }));
       },
     }),
     {
       name: 'dinerforged-v2-storage',
       storage: createJSONStorage(() => localStorage),
-      version: 3, // bumped to 3 to force clean state
+      version: 4, // bumped version
       migrate: (persistedState: any, version) => {
-        if (version < 3) {
+        // Safely extract and preserve savedRecipeIds across any version upgrade
+        const existingBookmarks = persistedState?.savedRecipeIds || [];
+        
+        if (version < 4) {
           if (persistedState && persistedState.customRecipes) {
             persistedState.customRecipes = persistedState.customRecipes.filter(
               (r: any) => r && typeof r === 'object' && r.id && r.title && Array.isArray(r.ingredients)
             );
           }
-          if (!persistedState.deletedRecipeIds) {
-            persistedState.deletedRecipeIds = [];
-          }
         }
-        return persistedState as AppState;
+
+        return {
+          ...(persistedState || {}),
+          savedRecipeIds: existingBookmarks, // guaranteed preservation
+          deletedRecipeIds: persistedState?.deletedRecipeIds || [],
+        } as AppState;
       },
     }
   )
