@@ -1,3 +1,5 @@
+// src/services/googleDriveSync.ts
+const CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
 const SCOPES = 'https://www.googleapis.com/auth/drive.file';
 const BACKUP_FILENAME = 'dinerforged-backup.json';
 
