@@ -61,7 +61,7 @@ export const AIChefPage: React.FC = () => {
       return;
     }
 
-    // Cloud Hybrid Endpoint Call
+    // Cloud Hybrid Endpoint Call with Safe Text/JSON Inspection
     try {
       const res = await fetch('/.netlify/functions/ai-chef', {
         method: 'POST',
@@ -69,7 +69,19 @@ export const AIChefPage: React.FC = () => {
         body: JSON.stringify({ prompt: query }),
       });
 
-      const data = await res.json();
+      const responseText = await res.text();
+
+      // Guard against empty responses (e.g., 404 HTML page or unconfigured local serverless function)
+      if (!responseText || responseText.trim() === '') {
+        throw new Error('Serverless function returned an empty response. Verify your Netlify functions deployment or use "netlify dev".');
+      }
+
+      let data;
+      try {
+        data = JSON.parse(responseText);
+      } catch (parseErr) {
+        throw new Error(`Server returned invalid response format: ${responseText.slice(0, 80)}...`);
+      }
 
       // Check if the serverless function responded with an HTTP error status
       if (!res.ok) {

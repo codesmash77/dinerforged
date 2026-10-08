@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { X, ChevronLeft, ChevronRight, Mic, MicOff, Play, Pause, RotateCcw } from 'lucide-react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { X, ChevronLeft, ChevronRight, Mic, MicOff, Play, Pause, RotateCcw, Volume2, AlertCircle } from 'lucide-react';
 import { Recipe } from '../../types';
+import { useRecipeVoice } from '../../hooks/useRecipeVoice';
 
 interface HandsFreeCookingModeProps {
   recipe: Recipe;
@@ -10,43 +11,137 @@ interface HandsFreeCookingModeProps {
 export const HandsFreeCookingMode: React.FC<HandsFreeCookingModeProps> = ({ recipe, onClose }) => {
   const [currentStep, setCurrentStep] = useState(0);
   const [isListening, setIsListening] = useState(false);
+  const [micError, setMicError] = useState<string | null>(null);
   const [timerSeconds, setTimerSeconds] = useState<number | null>(null);
   const [isTimerActive, setIsTimerActive] = useState(false);
+  const [voiceEnabledByUser, setVoiceEnabledByUser] = useState(false);
 
-  // Normalize instructions to support both string[] and InstructionStep[]
+  const { speak, stop: stopSpeech, isSpeaking } = useRecipeVoice();
+  const recognitionRef = useRef<any>(null);
+  const audioStreamRef = useRef<MediaStream | null>(null);
+
   const instructionsList = (recipe.instructions || []).map((step) => 
     typeof step === 'string' ? step : step.text
   );
 
-  // Web Speech API Voice Recognition setup
-  useEffect(() => {
-    let recognition: any = null;
-    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-      recognition = new SpeechRecognition();
-      recognition.continuous = true;
-      recognition.interimResults = false;
+  // Start speech recognition helper function
+  const startListeningEngine = useCallback(() => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) return;
 
-      recognition.onresult = (event: any) => {
-        const transcript = event.results[event.results.length - 1][0].transcript.toLowerCase().trim();
-        if (transcript.includes('next')) {
-          setCurrentStep((prev) => Math.min(instructionsList.length - 1, prev + 1));
-        } else if (transcript.includes('back') || transcript.includes('previous')) {
-          setCurrentStep((prev) => Math.max(0, prev - 1));
-        }
-      };
+    if (recognitionRef.current) {
+      try { recognitionRef.current.stop(); } catch (e) {}
     }
 
-    if (isListening && recognition) {
-      recognition.start();
-    } else if (recognition) {
-      recognition.stop();
-    }
+    const recognition = new SpeechRecognition();
+    recognitionRef.current = recognition;
+    recognition.continuous = true;
+    recognition.interimResults = false;
+    recognition.lang = 'en-US';
 
-    return () => {
-      if (recognition) recognition.stop();
+    recognition.onstart = () => {
+      setIsListening(true);
+      setMicError(null);
     };
-  }, [isListening, instructionsList.length]);
+
+    recognition.onresult = (event: any) => {
+      if (isSpeaking) return; // Ignore input while audio is playing
+
+      const lastResultIndex = event.results.length - 1;
+      const transcript = event.results[lastResultIndex][0].transcript.toLowerCase().trim();
+      console.log('Voice Command Received:', transcript);
+
+      if (transcript.includes('next') || transcript.includes('forward') || transcript.includes('continue')) {
+        setCurrentStep((prev) => Math.min(instructionsList.length - 1, prev + 1));
+      } else if (transcript.includes('back') || transcript.includes('previous') || transcript.includes('last')) {
+        setCurrentStep((prev) => Math.max(0, prev - 1));
+      }
+    };
+
+    recognition.onerror = (event: any) => {
+      console.error('Speech error:', event.error);
+      if (event.error === 'not-allowed') {
+        setMicError('Microphone permission denied.');
+        setIsListening(false);
+      }
+    };
+
+    recognition.onend = () => {
+      // Auto-restart if user wanted voice control active and app is not currently speaking
+      if (voiceEnabledByUser && recognitionRef.current && !isSpeaking) {
+        try { recognitionRef.current.start(); } catch (e) {}
+      }
+    };
+
+    try {
+      recognition.start();
+      setIsListening(true);
+    } catch (e) {
+      console.error('Recognition start error:', e);
+    }
+  }, [isSpeaking, instructionsList.length, voiceEnabledByUser]);
+
+  // Read step aloud, then automatically activate speech listening once speech ends
+  const speakCurrentStep = useCallback(() => {
+    if (!instructionsList[currentStep]) return;
+
+    // Stop mic temporarily while speaking to prevent feedback loops
+    if (recognitionRef.current) {
+      try { recognitionRef.current.stop(); } catch (e) {}
+    }
+    setIsListening(false);
+
+    speak(`Step ${currentStep + 1}: ${instructionsList[currentStep]}`, () => {
+      // EXACTLY when TTS finishes, automatically enable voice listening if user opted in
+      if (voiceEnabledByUser) {
+        startListeningEngine();
+      }
+    });
+  }, [currentStep, instructionsList, speak, voiceEnabledByUser, startListeningEngine]);
+
+  useEffect(() => {
+    speakCurrentStep();
+    return () => {
+      stopSpeech();
+    };
+  }, [currentStep]);
+
+  // Toggle voice control manually via button
+  const toggleVoiceControl = async () => {
+    if (voiceEnabledByUser) {
+      setVoiceEnabledByUser(false);
+      setIsListening(false);
+      if (recognitionRef.current) recognitionRef.current.stop();
+      if (audioStreamRef.current) {
+        audioStreamRef.current.getTracks().forEach((t) => t.stop());
+        audioStreamRef.current = null;
+      }
+      return;
+    }
+
+    setMicError(null);
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      audioStreamRef.current = stream;
+    } catch (err) {
+      setMicError('Microphone permission blocked. Please enable it in browser settings.');
+      return;
+    }
+
+    setVoiceEnabledByUser(true);
+    startListeningEngine();
+  };
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (recognitionRef.current) recognitionRef.current.stop();
+      if (audioStreamRef.current) {
+        audioStreamRef.current.getTracks().forEach((t) => t.stop());
+      }
+      stopSpeech();
+    };
+  }, [stopSpeech]);
 
   // Timer countdown hook
   useEffect(() => {
@@ -82,24 +177,41 @@ export const HandsFreeCookingMode: React.FC<HandsFreeCookingModeProps> = ({ reci
         </div>
         <div className="flex items-center gap-3">
           <button
-            onClick={() => setIsListening(!isListening)}
+            onClick={toggleVoiceControl}
             className={`flex items-center gap-2 rounded-full px-4 py-2 text-xs font-bold transition-colors ${
-              isListening ? 'bg-red-500 text-white animate-pulse' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+              voiceEnabledByUser ? 'bg-red-500 text-white animate-pulse shadow-lg shadow-red-500/30' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
             }`}
           >
-            {isListening ? <Mic className="h-4 w-4" /> : <MicOff className="h-4 w-4" />}
-            <span>{isListening ? 'Voice Control Active ("Next" / "Back")' : 'Enable Voice Control'}</span>
+            {voiceEnabledByUser ? <Mic className="h-4 w-4 animate-bounce" /> : <MicOff className="h-4 w-4" />}
+            <span>{voiceEnabledByUser ? (isListening ? '🎙️ Listening for "Next"/"Back"...' : '⏳ Ready...') : 'Enable Voice Control'}</span>
           </button>
-          <button onClick={onClose} className="rounded-full bg-slate-800 p-2 text-slate-300 hover:bg-slate-700">
+          <button onClick={() => { stopSpeech(); onClose(); }} className="rounded-full bg-slate-800 p-2 text-slate-300 hover:bg-slate-700">
             <X className="h-6 w-6" />
           </button>
         </div>
       </div>
 
+      {/* Mic Error Banner */}
+      {micError && (
+        <div className="mt-4 flex items-center gap-2 rounded-xl bg-red-500/10 border border-red-500/30 p-3 text-xs text-red-400">
+          <AlertCircle className="h-4 w-4 shrink-0" />
+          <span>{micError}</span>
+        </div>
+      )}
+
       {/* Main Step Viewer */}
       <div className="flex-1 flex flex-col justify-center max-w-4xl mx-auto my-8">
-        <div className="text-culinary-400 text-lg font-bold mb-2">
-          Step {currentStep + 1} of {instructionsList.length}
+        <div className="flex items-center justify-between mb-2">
+          <div className="text-culinary-400 text-lg font-bold">
+            Step {currentStep + 1} of {instructionsList.length}
+          </div>
+          <button
+            onClick={speakCurrentStep}
+            className="flex items-center gap-1.5 rounded-lg bg-slate-800 px-3 py-1.5 text-xs font-semibold text-slate-300 hover:bg-slate-700 transition-colors"
+          >
+            <Volume2 className={`h-4 w-4 text-culinary-400 ${isSpeaking ? 'animate-pulse' : ''}`} />
+            <span>Repeat Step</span>
+          </button>
         </div>
         <p className="text-2xl md:text-4xl font-medium leading-relaxed tracking-wide text-slate-100">
           {instructionsList[currentStep]}

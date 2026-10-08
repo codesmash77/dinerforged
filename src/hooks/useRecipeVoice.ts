@@ -12,15 +12,27 @@ export function useRecipeVoice() {
     }
   }, []);
 
-  const speak = useCallback((text: string) => {
+  const speak = useCallback((text: string, onEndCallback?: () => void) => {
     if (!('speechSynthesis' in window)) return;
 
-    // Always cancel active speech queues first to prevent locking/freezing bug
-    window.speechSynthesis.cancel();
+    window.speechSynthesis.cancel(); // Clear queue
 
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.rate = 1.0;
-    utterance.pitch = 1.0;
+    utterance.pitch = 1.1;
+
+    // Strict Female Voice Identification
+    const voices = window.speechSynthesis.getVoices();
+    const preferredVoice = voices.find((v) => 
+      (/female|zira|samantha|victoria|karen|moira|tessa|fiona|susan|hazel|helen/i.test(v.name) || 
+       v.name.includes('Google UK English Female') || 
+       v.name.includes('Microsoft Zira')) && v.lang.startsWith('en')
+    ) || voices.find((v) => v.lang.startsWith('en') && !/male|david|mark|george|james|richard/i.test(v.name)) 
+      || voices[0];
+
+    if (preferredVoice) {
+      utterance.voice = preferredVoice;
+    }
 
     utterance.onstart = () => {
       setIsSpeaking(true);
@@ -30,17 +42,26 @@ export function useRecipeVoice() {
     utterance.onend = () => {
       setIsSpeaking(false);
       setCurrentText(null);
+      if (onEndCallback) onEndCallback();
     };
 
     utterance.onerror = () => {
       setIsSpeaking(false);
       setCurrentText(null);
+      if (onEndCallback) onEndCallback();
     };
 
     window.speechSynthesis.speak(utterance);
   }, []);
 
   useEffect(() => {
+    // Force voice load trigger for browsers that load voices asynchronously (like Chrome)
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.getVoices();
+      window.speechSynthesis.onvoiceschanged = () => {
+        window.speechSynthesis.getVoices();
+      };
+    }
     return () => {
       if ('speechSynthesis' in window) {
         window.speechSynthesis.cancel();

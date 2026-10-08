@@ -8,8 +8,8 @@ import { MealPlannerPage } from './pages/MealPlannerPage';
 import { ShoppingListPage } from './pages/ShoppingListPage';
 import { TechniquesPage } from './pages/TechniquesPage';
 import { AIChefPage } from './pages/AIChefPage';
-import { useTheme } from './hooks/useTheme';
 import { FavoritesPage } from './pages/FavoritesPage';
+import { useTheme } from './hooks/useTheme';
 import { IOSInstallPrompt } from './components/pwa/IOSInstallPrompt';
 import { SmartKitchenAssistant } from './components/timers/SmartKitchenAssistant';
 
@@ -27,7 +27,7 @@ export const App: React.FC = () => {
         <Navbar /> 
 
         {/* Primary Route Container */}
-        <main className="flex-1">
+        <main className="flex-1 pb-20 md:pb-8">
           <Routes>
             <Route path="/" element={<RecipesPage />} />
             <Route path="/planner" element={<MealPlannerPage />} />
@@ -40,11 +40,11 @@ export const App: React.FC = () => {
         </main>
 
         {/* Global Mobile Sticky Bottom Navigation */}
-        <MobileNav />\
+        <MobileNav />
+
         {/* Global Floating Widgets & PWA Prompts */}
         <SmartKitchenAssistant />
         <IOSInstallPrompt />
-        
       </div>
     </BrowserRouter>
   );
