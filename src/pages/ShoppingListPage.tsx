@@ -145,25 +145,29 @@ export const ShoppingListPage: React.FC = () => {
             Smart Grocery List
           </h1>
           <p className="text-sm text-slate-600 dark:text-slate-400 mt-1 print:hidden">
-            Auto-generated from your meal planner combined with your manual ad-hoc items.
+            Create standalone shopping lists or auto-generate them from your meal planner.
           </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-3 print:hidden">
-          <button
-            onClick={handleCopyTextList}
-            className="flex items-center gap-2 rounded-xl border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800 transition-colors"
-          >
-            {copied ? <Check className="h-4 w-4 text-emerald-500" /> : <Copy className="h-4 w-4" />}
-            <span>{copied ? 'Copied' : 'Copy List'}</span>
-          </button>
+          {totalItemsCount > 0 && (
+            <>
+              <button
+                onClick={handleCopyTextList}
+                className="flex items-center gap-2 rounded-xl border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800 transition-colors"
+              >
+                {copied ? <Check className="h-4 w-4 text-emerald-500" /> : <Copy className="h-4 w-4" />}
+                <span>{copied ? 'Copied' : 'Copy List'}</span>
+              </button>
 
-          <button
-            onClick={handlePrint}
-            className="flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800 dark:bg-culinary-500 dark:text-slate-950 dark:hover:bg-culinary-400 transition-colors"
-          >
-            <Printer className="h-4 w-4" /> Print List
-          </button>
+              <button
+                onClick={handlePrint}
+                className="flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800 dark:bg-culinary-500 dark:text-slate-950 dark:hover:bg-culinary-400 transition-colors"
+              >
+                <Printer className="h-4 w-4" /> Print List
+              </button>
+            </>
+          )}
 
           {checkedCount > 0 && (
             <button
@@ -176,22 +180,22 @@ export const ShoppingListPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Quick-Add Ad-Hoc Item Form (Hidden during print) */}
+      {/* Quick-Add Ad-Hoc Item Form (Always Visible!) */}
       <div className="mb-8 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900 print:hidden">
-        <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-3">Add Custom Item</h3>
+        <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-3">Add Shopping Item</h3>
         <form onSubmit={handleAddCustomItem} className="grid grid-cols-1 sm:grid-cols-12 gap-3">
           <input
             type="text"
             value={newItemName}
             onChange={(e) => setNewItemName(e.target.value)}
-            placeholder="Item name (e.g., Paper towels, Espresso)..."
+            placeholder="Item name (e.g., Milk, Eggs, Coffee)..."
             className="sm:col-span-5 rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-sm text-slate-900 focus:bg-white focus:border-culinary-500 focus:outline-none dark:border-slate-800 dark:bg-slate-950 dark:text-white"
           />
           <input
             type="text"
             value={newItemCategory}
             onChange={(e) => setNewItemCategory(e.target.value)}
-            placeholder="Category (e.g., Household)"
+            placeholder="Category (e.g., Dairy)"
             className="sm:col-span-3 rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-sm text-slate-900 focus:bg-white focus:border-culinary-500 focus:outline-none dark:border-slate-800 dark:bg-slate-950 dark:text-white"
           />
           <input
@@ -205,7 +209,7 @@ export const ShoppingListPage: React.FC = () => {
             type="submit"
             className="sm:col-span-2 flex items-center justify-center gap-1.5 rounded-xl bg-culinary-500 px-4 py-2.5 text-xs font-bold text-slate-950 hover:bg-culinary-400 transition-colors shadow-sm"
           >
-            <Plus className="h-4 w-4" /> Add
+            <Plus className="h-4 w-4" /> Add Item
           </button>
         </form>
       </div>
@@ -228,13 +232,13 @@ export const ShoppingListPage: React.FC = () => {
         </div>
       )}
 
-      {/* Empty State */}
+      {/* Empty State (Only if both Meal Planner and Custom Items are empty) */}
       {totalItemsCount === 0 && (
-        <div className="rounded-2xl border border-dashed border-slate-300 p-12 text-center dark:border-slate-800">
+        <div className="rounded-2xl border border-dashed border-slate-300 p-12 text-center dark:border-slate-800 my-6">
           <ShoppingCart className="mx-auto h-12 w-12 text-slate-400 mb-3" />
           <h3 className="text-lg font-bold text-slate-900 dark:text-white">Your Shopping List is Empty</h3>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-            Add manual items above or assign recipes to your Meal Planner to populate your grocery list.
+            Use the form above to add custom items, or assign recipes to your Meal Planner.
           </p>
         </div>
       )}
