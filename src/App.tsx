@@ -13,6 +13,7 @@ import { LegalPage } from './pages/LegalPage';
 import { useTheme } from './hooks/useTheme';
 import { IOSInstallPrompt } from './components/pwa/IOSInstallPrompt';
 import { SmartKitchenAssistant } from './components/timers/SmartKitchenAssistant';
+import { Footer } from './components/layout/Footer';
 
 export const App: React.FC = () => {
   // Initialize dark mode class sync
@@ -40,6 +41,9 @@ export const App: React.FC = () => {
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </main>
+
+        {/* App Footer */}
+        <Footer />
 
         {/* Global Mobile Sticky Bottom Navigation */}
         <MobileNav />
