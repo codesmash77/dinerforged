@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Search, Globe, Plus, CheckCircle2, Flame, Dumbbell, Wheat, Droplets, Loader2, Utensils } from 'lucide-react';
 import { normalizeMealDbRecipe, NormalizedRecipe } from '../utils/recipeNormalizer';
+import { useAppStore } from '../store/useAppStore';
 
 export const GlobalSearchPage: React.FC = () => {
   const [query, setQuery] = useState('');
@@ -8,6 +9,10 @@ export const GlobalSearchPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
   const [importedIds, setImportedIds] = useState<Record<string, boolean>>({});
+
+  // Access the centralized Zustand store action
+  const addCustomRecipe = useAppStore((state) => state.addCustomRecipe);
+  const customRecipes = useAppStore((state) => state.customRecipes || []);
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -21,14 +26,12 @@ export const GlobalSearchPage: React.FC = () => {
     try {
       let fetchedMeals: any[] = [];
 
-      // Strategy 1: Direct name search
       const nameRes = await fetch(`https://www.themealdb.com/api/json/v1/1/search.php?s=${encodeURIComponent(cleanQuery)}`);
       const nameData = await nameRes.json();
       if (nameData && nameData.meals) {
         fetchedMeals = [...nameData.meals];
       }
 
-      // Strategy 2: If low results or zero, try searching by main ingredient (e.g., 'palak' -> 'spinach' or ingredient match)
       const ingredientMap: Record<string, string> = {
         palak: 'spinach',
         paneer: 'paneer',
@@ -49,7 +52,6 @@ export const GlobalSearchPage: React.FC = () => {
         const ingRes = await fetch(`https://www.themealdb.com/api/json/v1/1/filter.php?i=${encodeURIComponent(mappedIngredient)}`);
         const ingData = await ingRes.json();
         if (ingData && ingData.meals) {
-          // filter.php only returns basic info (id, name, thumb), so we fetch full details for top results
           const detailedMeals = await Promise.all(
             ingData.meals.slice(0, 8).map(async (m: any) => {
               const detailRes = await fetch(`https://www.themealdb.com/api/json/v1/1/lookup.php?i=${m.idMeal}`);
@@ -59,7 +61,6 @@ export const GlobalSearchPage: React.FC = () => {
           );
           
           const validDetailed = detailedMeals.filter(Boolean);
-          // Merge without duplicates
           const existingIds = new Set(fetchedMeals.map((m) => m.idMeal));
           validDetailed.forEach((m) => {
             if (!existingIds.has(m.idMeal)) {
@@ -67,22 +68,6 @@ export const GlobalSearchPage: React.FC = () => {
               existingIds.add(m.idMeal);
             }
           });
-        }
-      }
-
-      // Strategy 3: If still empty, search by first letter of the query
-      if (fetchedMeals.length === 0 && cleanQuery.length > 0) {
-        const firstLetter = cleanQuery.charAt(0);
-        const letterRes = await fetch(`https://www.themealdb.com/api/json/v1/1/search.php?f=${firstLetter}`);
-        const letterData = await letterRes.json();
-        if (letterData && letterData.meals) {
-          // Client-side filter for partial keyword match
-          const filtered = letterData.meals.filter((m: any) => 
-            m.strMeal.toLowerCase().includes(cleanQuery) || 
-            (m.strCategory && m.strCategory.toLowerCase().includes(cleanQuery)) ||
-            (m.strArea && m.strArea.toLowerCase().includes(cleanQuery))
-          );
-          fetchedMeals = filtered.length > 0 ? filtered : letterData.meals.slice(0, 6);
         }
       }
 
@@ -102,19 +87,18 @@ export const GlobalSearchPage: React.FC = () => {
 
   const handleImportRecipe = (recipe: NormalizedRecipe) => {
     try {
-      const existingRaw = localStorage.getItem('dinerforged_recipes');
-      const existingRecipes = existingRaw ? JSON.parse(existingRaw) : [];
-      
-      if (existingRecipes.some((r: any) => r.id === recipe.id)) {
+      // Check if already in store
+      const alreadyExists = customRecipes.some((r: any) => r.id === recipe.id);
+      if (alreadyExists) {
         setImportedIds((prev) => ({ ...prev, [recipe.id]: true }));
         return;
       }
 
-      const updatedRecipes = [recipe, ...existingRecipes];
-      localStorage.setItem('dinerforged_recipes', JSON.stringify(updatedRecipes));
+      // Add via Zustand store action for instant reactivity across the app
+      addCustomRecipe(recipe as any);
       setImportedIds((prev) => ({ ...prev, [recipe.id]: true }));
     } catch (e) {
-      console.error('Error saving imported recipe:', e);
+      console.error('Error saving imported recipe to store:', e);
     }
   };
 
@@ -165,7 +149,7 @@ export const GlobalSearchPage: React.FC = () => {
       ) : recipes.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {recipes.map((recipe) => {
-            const isImported = importedIds[recipe.id];
+            const isImported = importedIds[recipe.id] || customRecipes.some((r: any) => r.id === recipe.id);
             return (
               <div
                 key={recipe.id}
