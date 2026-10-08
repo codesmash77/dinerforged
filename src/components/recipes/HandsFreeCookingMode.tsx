@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { X, ChevronLeft, ChevronRight, Mic, MicOff, Play, Pause, RotateCcw, Volume2, AlertCircle } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, Mic, Play, Pause, RotateCcw, Volume2, AlertCircle } from 'lucide-react';
 import { Recipe } from '../../types';
 import { useRecipeVoice } from '../../hooks/useRecipeVoice';
 
@@ -106,19 +106,8 @@ export const HandsFreeCookingMode: React.FC<HandsFreeCookingModeProps> = ({ reci
     };
   }, [currentStep]);
 
-  // Toggle voice control manually via button
-  const toggleVoiceControl = async () => {
-    if (voiceEnabledByUser) {
-      setVoiceEnabledByUser(false);
-      setIsListening(false);
-      if (recognitionRef.current) recognitionRef.current.stop();
-      if (audioStreamRef.current) {
-        audioStreamRef.current.getTracks().forEach((t) => t.stop());
-        audioStreamRef.current = null;
-      }
-      return;
-    }
-
+  // Initialize microphone permission and voice control on user gesture
+  const activateVoiceControl = async () => {
     setMicError(null);
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -176,15 +165,22 @@ export const HandsFreeCookingMode: React.FC<HandsFreeCookingModeProps> = ({ reci
           <h2 className="text-xl md:text-2xl font-bold">{recipe.title}</h2>
         </div>
         <div className="flex items-center gap-3">
-          <button
-            onClick={toggleVoiceControl}
-            className={`flex items-center gap-2 rounded-full px-4 py-2 text-xs font-bold transition-colors ${
-              voiceEnabledByUser ? 'bg-red-500 text-white animate-pulse shadow-lg shadow-red-500/30' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
-            }`}
-          >
-            {voiceEnabledByUser ? <Mic className="h-4 w-4 animate-bounce" /> : <MicOff className="h-4 w-4" />}
-            <span>{voiceEnabledByUser ? (isListening ? '🎙️ Listening for "Next"/"Back"...' : '⏳ Ready...') : 'Enable Voice Control'}</span>
-          </button>
+          {!voiceEnabledByUser ? (
+            <button
+              onClick={activateVoiceControl}
+              className="flex items-center gap-2 rounded-full bg-culinary-500 px-4 py-2 text-xs font-bold text-slate-950 hover:bg-culinary-400 transition-colors shadow-lg animate-bounce"
+            >
+              <Mic className="h-4 w-4" />
+              <span>Tap to Enable Voice Control</span>
+            </button>
+          ) : (
+            <div className={`flex items-center gap-2 rounded-full px-4 py-2 text-xs font-bold ${
+              isListening ? 'bg-red-500 text-white animate-pulse shadow-lg shadow-red-500/30' : 'bg-slate-800 text-slate-300'
+            }`}>
+              <Mic className="h-4 w-4" />
+              <span>{isListening ? '🎙️ Listening for "Next" / "Back"...' : '⏳ Ready...'}</span>
+            </div>
+          )}
           <button onClick={() => { stopSpeech(); onClose(); }} className="rounded-full bg-slate-800 p-2 text-slate-300 hover:bg-slate-700">
             <X className="h-6 w-6" />
           </button>
