@@ -11,24 +11,89 @@ export const GlobalSearchPage: React.FC = () => {
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!query.trim()) return;
+    const cleanQuery = query.trim().toLowerCase();
+    if (!cleanQuery) return;
 
     setIsLoading(true);
     setHasSearched(true);
     setRecipes([]);
 
     try {
-      const response = await fetch(`https://www.themealdb.com/api/json/v1/1/search.php?s=${encodeURIComponent(query.trim())}`);
-      const data = await response.json();
+      let fetchedMeals: any[] = [];
 
-      if (data && data.meals) {
-        const normalized = data.meals.map((meal: any) => normalizeMealDbRecipe(meal));
+      // Strategy 1: Direct name search
+      const nameRes = await fetch(`https://www.themealdb.com/api/json/v1/1/search.php?s=${encodeURIComponent(cleanQuery)}`);
+      const nameData = await nameRes.json();
+      if (nameData && nameData.meals) {
+        fetchedMeals = [...nameData.meals];
+      }
+
+      // Strategy 2: If low results or zero, try searching by main ingredient (e.g., 'palak' -> 'spinach' or ingredient match)
+      const ingredientMap: Record<string, string> = {
+        palak: 'spinach',
+        paneer: 'paneer',
+        chicken: 'chicken',
+        beef: 'beef',
+        pork: 'pork',
+        lamb: 'lamb',
+        pasta: 'pasta',
+        rice: 'rice',
+        fish: 'fish',
+        shrimp: 'shrimp',
+        chocolate: 'chocolate',
+        potato: 'potato',
+      };
+
+      const mappedIngredient = ingredientMap[cleanQuery] || cleanQuery;
+      if (fetchedMeals.length < 3) {
+        const ingRes = await fetch(`https://www.themealdb.com/api/json/v1/1/filter.php?i=${encodeURIComponent(mappedIngredient)}`);
+        const ingData = await ingRes.json();
+        if (ingData && ingData.meals) {
+          // filter.php only returns basic info (id, name, thumb), so we fetch full details for top results
+          const detailedMeals = await Promise.all(
+            ingData.meals.slice(0, 8).map(async (m: any) => {
+              const detailRes = await fetch(`https://www.themealdb.com/api/json/v1/1/lookup.php?i=${m.idMeal}`);
+              const detailData = await detailRes.json();
+              return detailData?.meals?.[0] || null;
+            })
+          );
+          
+          const validDetailed = detailedMeals.filter(Boolean);
+          // Merge without duplicates
+          const existingIds = new Set(fetchedMeals.map((m) => m.idMeal));
+          validDetailed.forEach((m) => {
+            if (!existingIds.has(m.idMeal)) {
+              fetchedMeals.push(m);
+              existingIds.add(m.idMeal);
+            }
+          });
+        }
+      }
+
+      // Strategy 3: If still empty, search by first letter of the query
+      if (fetchedMeals.length === 0 && cleanQuery.length > 0) {
+        const firstLetter = cleanQuery.charAt(0);
+        const letterRes = await fetch(`https://www.themealdb.com/api/json/v1/1/search.php?f=${firstLetter}`);
+        const letterData = await letterRes.json();
+        if (letterData && letterData.meals) {
+          // Client-side filter for partial keyword match
+          const filtered = letterData.meals.filter((m: any) => 
+            m.strMeal.toLowerCase().includes(cleanQuery) || 
+            (m.strCategory && m.strCategory.toLowerCase().includes(cleanQuery)) ||
+            (m.strArea && m.strArea.toLowerCase().includes(cleanQuery))
+          );
+          fetchedMeals = filtered.length > 0 ? filtered : letterData.meals.slice(0, 6);
+        }
+      }
+
+      if (fetchedMeals.length > 0) {
+        const normalized = fetchedMeals.map((meal: any) => normalizeMealDbRecipe(meal));
         setRecipes(normalized);
       } else {
         setRecipes([]);
       }
     } catch (error) {
-      console.error('Failed to query global recipe API:', error);
+      console.error('Failed to query global recipe APIs:', error);
       setRecipes([]);
     } finally {
       setIsLoading(false);
@@ -47,10 +112,9 @@ export const GlobalSearchPage: React.FC = () => {
 
       const updatedRecipes = [recipe, ...existingRecipes];
       localStorage.setItem('dinerforged_recipes', JSON.stringify(updatedRecipes));
-      
       setImportedIds((prev) => ({ ...prev, [recipe.id]: true }));
     } catch (e) {
-      console.error('Error saving recipe to local store:', e);
+      console.error('Error saving imported recipe:', e);
     }
   };
 
@@ -66,11 +130,11 @@ export const GlobalSearchPage: React.FC = () => {
           Global Recipe Search
         </h1>
         <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
-          Search thousands of world recipes, inspect estimated macronutrients, and import them instantly into your local cookbook.
+          Search world recipes by name, ingredient (e.g. "palak", "chicken", "paneer"), or keyword with instant macro estimation.
         </p>
       </div>
 
-      {/* Search Input Bar */}
+      {/* Search Bar */}
       <form onSubmit={handleSearch} className="flex gap-3 max-w-2xl">
         <div className="relative flex-1">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
@@ -78,7 +142,7 @@ export const GlobalSearchPage: React.FC = () => {
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search recipes (e.g., lasagna, chicken curry, tacos)..."
+            placeholder="Search recipes or ingredients (e.g., palak, lasagna, curry)..."
             className="w-full rounded-2xl border border-slate-200 bg-white pl-12 pr-4 py-3.5 text-sm text-slate-900 shadow-sm focus:border-culinary-500 focus:outline-none focus:ring-2 focus:ring-culinary-500/20 dark:border-slate-800 dark:bg-slate-900 dark:text-white"
           />
         </div>
@@ -92,11 +156,11 @@ export const GlobalSearchPage: React.FC = () => {
         </button>
       </form>
 
-      {/* Search Results Grid */}
+      {/* Results Grid */}
       {isLoading ? (
         <div className="flex flex-col items-center justify-center py-20 text-slate-400 gap-3">
           <Loader2 className="h-10 w-10 animate-spin text-culinary-500" />
-          <p className="text-sm font-medium">Querying global repositories...</p>
+          <p className="text-sm font-medium">Scouring multi-region culinary databases...</p>
         </div>
       ) : recipes.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -107,7 +171,6 @@ export const GlobalSearchPage: React.FC = () => {
                 key={recipe.id}
                 className="flex flex-col rounded-2xl border border-slate-200 bg-white overflow-hidden shadow-sm hover:shadow-xl dark:border-slate-800 dark:bg-slate-900 transition-all duration-300"
               >
-                {/* Thumbnail */}
                 <div className="relative h-48 w-full overflow-hidden bg-slate-100 dark:bg-slate-800">
                   <img
                     src={recipe.imageUrl}
@@ -119,7 +182,6 @@ export const GlobalSearchPage: React.FC = () => {
                   </span>
                 </div>
 
-                {/* Content */}
                 <div className="p-5 flex-1 flex flex-col justify-between space-y-4">
                   <div>
                     <h3 className="font-display font-bold text-lg text-slate-900 dark:text-white line-clamp-1">
@@ -154,7 +216,6 @@ export const GlobalSearchPage: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Import Action */}
                   <button
                     onClick={() => handleImportRecipe(recipe)}
                     disabled={isImported}
@@ -184,12 +245,12 @@ export const GlobalSearchPage: React.FC = () => {
       ) : hasSearched ? (
         <div className="text-center py-20 text-slate-400 space-y-2">
           <Utensils className="h-10 w-10 mx-auto opacity-40" />
-          <p className="text-sm font-medium">No global recipes found matching "{query}". Try another term!</p>
+          <p className="text-sm font-medium">No recipes found for "{query}". Try another ingredient like chicken, paneer, rice, or beef!</p>
         </div>
       ) : (
         <div className="text-center py-20 text-slate-400 space-y-2">
           <Globe className="h-12 w-12 mx-auto text-culinary-500/40" />
-          <p className="text-sm font-medium">Enter a keyword above to explore world recipes instantly.</p>
+          <p className="text-sm font-medium">Type any ingredient or dish name to explore world recipes instantly.</p>
         </div>
       )}
     </div>
