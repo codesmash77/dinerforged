@@ -45,13 +45,14 @@ export const useAppStore = create<AppState>()(
 
       customRecipes: [],
       addCustomRecipe: (newRecipe) =>
-        set((state) => ({
-          customRecipes: [
-            { ...newRecipe, id: newRecipe.id || `custom-${Date.now()}` },
-            ...state.customRecipes.filter((r) => r.id !== newRecipe.id),
-          ],
-          deletedRecipeIds: (state.deletedRecipeIds || []).filter((id) => id !== newRecipe.id),
-        })),
+        set((state) => {
+          const existing = state.customRecipes || [];
+          const filtered = existing.filter((r) => r.id !== newRecipe.id);
+          return {
+            customRecipes: [newRecipe, ...filtered],
+            deletedRecipeIds: (state.deletedRecipeIds || []).filter((id) => id !== newRecipe.id),
+          };
+        }),
 
       updateCustomRecipe: (id, updatedFields) =>
         set((state) => ({
@@ -64,7 +65,6 @@ export const useAppStore = create<AppState>()(
         set((state) => ({
           customRecipes: (state.customRecipes || []).filter((r) => r.id !== id),
           deletedRecipeIds: [...new Set([...(state.deletedRecipeIds || []), id])],
-          // Keep savedRecipeIds intact unless explicitly unsaved by the user
         })),
 
       deletedRecipeIds: [],
@@ -140,33 +140,26 @@ export const useAppStore = create<AppState>()(
         })),
 
       purgeAndResetStorage: () => {
-        set((state) => ({
+        set({
           customRecipes: [],
           deletedRecipeIds: [],
-          // savedRecipeIds is strictly preserved here!
-        }));
+        });
       },
     }),
     {
       name: 'dinerforged-v2-storage',
       storage: createJSONStorage(() => localStorage),
-      version: 4, // bumped version
+      version: 5, // Bumped to version 5 to force clean state preservation
       migrate: (persistedState: any, version) => {
-        // Safely extract and preserve savedRecipeIds across any version upgrade
         const existingBookmarks = persistedState?.savedRecipeIds || [];
-        
-        if (version < 4) {
-          if (persistedState && persistedState.customRecipes) {
-            persistedState.customRecipes = persistedState.customRecipes.filter(
-              (r: any) => r && typeof r === 'object' && r.id && r.title && Array.isArray(r.ingredients)
-            );
-          }
-        }
+        const existingCustomRecipes = persistedState?.customRecipes || [];
+        const existingDeletedIds = persistedState?.deletedRecipeIds || [];
 
         return {
           ...(persistedState || {}),
-          savedRecipeIds: existingBookmarks, // guaranteed preservation
-          deletedRecipeIds: persistedState?.deletedRecipeIds || [],
+          customRecipes: Array.isArray(existingCustomRecipes) ? existingCustomRecipes : [],
+          savedRecipeIds: Array.isArray(existingBookmarks) ? existingBookmarks : [],
+          deletedRecipeIds: Array.isArray(existingDeletedIds) ? existingDeletedIds : [],
         } as AppState;
       },
     }
