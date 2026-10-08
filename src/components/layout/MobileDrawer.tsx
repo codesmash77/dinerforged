@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { X, BookOpen, Bookmark, UtensilsCrossed, Calendar, ShoppingCart, Sparkles, ShieldCheck, FileText } from 'lucide-react';
+import { X, BookOpen, Bookmark, UtensilsCrossed, Calendar, ShoppingCart, Sparkles, Globe, ShieldCheck, FileText } from 'lucide-react';
 
 interface MobileDrawerProps {
   isOpen: boolean;
@@ -25,6 +25,7 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({ isOpen, onClose }) =
 
   const secondaryLinks = [
     { to: '/', label: 'Recipes', icon: UtensilsCrossed },
+    { to: '/explore', label: 'Explore Global Recipes', icon: Globe },
     { to: '/planner', label: 'Planner', icon: Calendar },
     { to: '/shopping', label: 'Shopping', icon: ShoppingCart },
     { to: '/techniques', label: 'Culinary Guides', icon: BookOpen },
@@ -34,7 +35,6 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({ isOpen, onClose }) =
 
   return (
     <div className="fixed inset-0 z-50 md:hidden">
-      {/* Backdrop Overlay */}
       <div 
         className={`fixed inset-0 bg-slate-950/80 backdrop-blur-sm transition-opacity duration-300 ease-in-out ${
           isOpen ? 'opacity-100' : 'opacity-0'
@@ -42,7 +42,6 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({ isOpen, onClose }) =
         onClick={onClose} 
       />
 
-      {/* Slide-out Drawer Panel */}
       <div 
         className={`fixed top-0 right-0 bottom-0 z-50 flex w-4/5 max-w-xs flex-col bg-slate-900 text-white shadow-2xl p-6 border-l border-slate-800 transition-transform duration-300 ease-in-out ${
           isOpen ? 'translate-x-0' : 'translate-x-full'
@@ -59,7 +58,6 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({ isOpen, onClose }) =
           </button>
         </div>
 
-        {/* Scrollable Navigation Links */}
         <nav className="mt-6 flex-1 flex flex-col gap-2 overflow-y-auto pr-1">
           {secondaryLinks.map(({ to, label, icon: Icon }) => (
             <NavLink
@@ -80,7 +78,6 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({ isOpen, onClose }) =
           ))}
         </nav>
 
-        {/* Legal Links Footer */}
         <div className="mt-auto pt-4 border-t border-slate-800 flex flex-col gap-2 text-xs text-slate-400">
           <NavLink
             to="/legal?type=privacy"
