@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { ChefHat, BookOpen, Calendar, ShoppingCart, Sparkles, Sun, Moon, WifiOff, UtensilsCrossed, Download, Bookmark, Cloud } from 'lucide-react';
+import { ChefHat, BookOpen, Calendar, ShoppingCart, Sparkles, Sun, Moon, WifiOff, UtensilsCrossed, Download, Bookmark, Cloud, ShieldCheck } from 'lucide-react';
 import { useTheme } from '../../hooks/useTheme';
 import { useOnlineStatus } from '../../hooks/useOnlineStatus';
 import { usePWAInstall } from '../../hooks/usePWAInstall';
@@ -104,7 +104,6 @@ export const Navbar: React.FC = () => {
         isOpen={isCloudSyncOpen}
         onClose={() => setIsCloudSyncOpen(false)}
         onRestoreState={() => {
-          // Triggered when state is restored from Google Drive
           window.location.reload();
         }}
       />

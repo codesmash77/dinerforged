@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { X, BookOpen, Bookmark, UtensilsCrossed, Calendar, ShoppingCart, Sparkles } from 'lucide-react';
+import { X, BookOpen, Bookmark, UtensilsCrossed, Calendar, ShoppingCart, Sparkles, ShieldCheck, FileText } from 'lucide-react';
 
 interface MobileDrawerProps {
   isOpen: boolean;
@@ -79,6 +79,26 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({ isOpen, onClose }) =
             </NavLink>
           ))}
         </nav>
+
+        {/* Legal Links Footer */}
+        <div className="mt-auto pt-4 border-t border-slate-800 flex flex-col gap-2 text-xs text-slate-400">
+          <NavLink
+            to="/legal?type=privacy"
+            onClick={onClose}
+            className="flex items-center gap-2 hover:text-culinary-400 transition-colors py-1"
+          >
+            <ShieldCheck className="h-4 w-4 text-culinary-500" />
+            <span>Privacy Policy</span>
+          </NavLink>
+          <NavLink
+            to="/legal?type=terms"
+            onClick={onClose}
+            className="flex items-center gap-2 hover:text-culinary-400 transition-colors py-1"
+          >
+            <FileText className="h-4 w-4 text-culinary-500" />
+            <span>Terms of Service</span>
+          </NavLink>
+        </div>
       </div>
     </div>
   );
