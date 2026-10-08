@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { ChefHat, BookOpen, Calendar, ShoppingCart, Sparkles, Sun, Moon, WifiOff, UtensilsCrossed, Download, Bookmark, Cloud, ShieldCheck } from 'lucide-react';
+import { ChefHat, BookOpen, Calendar, ShoppingCart, Sparkles, Sun, Moon, WifiOff, UtensilsCrossed, Download, Bookmark, Cloud, Globe } from 'lucide-react';
 import { useTheme } from '../../hooks/useTheme';
 import { useOnlineStatus } from '../../hooks/useOnlineStatus';
 import { usePWAInstall } from '../../hooks/usePWAInstall';
@@ -14,6 +14,7 @@ export const Navbar: React.FC = () => {
 
   const navLinks = [
     { to: '/', label: 'Recipes', icon: UtensilsCrossed },
+    { to: '/explore', label: 'Explore', icon: Globe },
     { to: '/planner', label: 'Planner', icon: Calendar },
     { to: '/shopping', label: 'Shopping', icon: ShoppingCart },
     { to: '/techniques', label: 'Techniques', icon: BookOpen },
@@ -26,7 +27,6 @@ export const Navbar: React.FC = () => {
       <header className="sticky top-0 z-40 w-full border-b border-slate-200 bg-white/80 backdrop-blur-md dark:border-slate-800 dark:bg-slate-950/80 transition-colors">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
           
-          {/* Brand Logo */}
           <div className="flex items-center gap-3">
             <NavLink to="/" className="flex items-center gap-2 text-culinary-500 font-display font-bold text-xl tracking-tight">
               <ChefHat className="h-7 w-7 text-culinary-500" />
@@ -34,7 +34,6 @@ export const Navbar: React.FC = () => {
             </NavLink>
           </div>
 
-          {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center gap-1">
             {navLinks.map(({ to, label, icon: Icon }) => (
               <NavLink
@@ -54,7 +53,6 @@ export const Navbar: React.FC = () => {
             ))}
           </nav>
 
-          {/* Status Indicators, Install Widget, Cloud Sync & Theme Switch */}
           <div className="flex items-center gap-2 sm:gap-3">
             {!isOnline && (
               <div className="flex items-center gap-1.5 rounded-full bg-amber-500/10 px-2.5 py-1 text-xs font-semibold text-amber-600 dark:text-amber-400">
@@ -63,7 +61,6 @@ export const Navbar: React.FC = () => {
               </div>
             )}
 
-            {/* PWA Download / Install Widget Button */}
             {isInstallable && (
               <button
                 onClick={installPWA}
@@ -76,7 +73,6 @@ export const Navbar: React.FC = () => {
               </button>
             )}
 
-            {/* Google Drive Cloud Sync Button */}
             <button
               onClick={() => setIsCloudSyncOpen(true)}
               title="Google Drive Backup & Sync"
@@ -86,7 +82,6 @@ export const Navbar: React.FC = () => {
               <Cloud className="h-5 w-5 text-culinary-500" />
             </button>
 
-            {/* Dark Mode Switch */}
             <button
               onClick={toggleDarkMode}
               aria-label="Toggle Dark Mode"
@@ -99,7 +94,6 @@ export const Navbar: React.FC = () => {
         </div>
       </header>
 
-      {/* Cloud Sync Modal */}
       <CloudSyncModal
         isOpen={isCloudSyncOpen}
         onClose={() => setIsCloudSyncOpen(false)}
