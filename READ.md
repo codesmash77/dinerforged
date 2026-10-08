@@ -11,11 +11,12 @@ Dinerforged is an AI-augmented Progressive Web App (PWA) designed for home cooks
 - 🧪 **Techniques & Utensils Encyclopedias:** Deep-dive into food science explanations, common mistakes, and equipment care guides.
 - 📅 **Smart Meal Planner & Pantry Roulette:** 7-day planning grid featuring an Inventory Reuse Index optimizer and a "What Can I Cook Right Now?" matching algorithm.
 - 🛒 **Auto-Aggregated Shopping List:** Automatically parses, normalizes, scales, and categorizes grocery items into Produce, Pantry, Dairy, Meat, Seafood, Spices, and Oil & Fat.
+- ⏱️ **Global Kitchen Timer Suite:** Multi-timer management store powered by Zustand, featuring Web Audio API synthesized chime alerts and a floating quick-timer widget (`SmartKitchenAssistant.tsx`).
+- 🗣️ **Hands-Free Cooking Mode:** Full-screen step-by-step guidance featuring strict female-only voice narration (`useRecipeVoice.ts`) and sequential auto-listening voice commands ("Next" / "Back").
+- ☁️ **Google Drive Cloud Sync & Backups:** Secure, private user data backups (`dinerforged-backup.json`) via Google Identity Services OAuth 2.0 (`googleDriveSync.ts`).
 - 🤖 **Hybrid AI Chef Companion:** OpenRouter Free Tier / Groq serverless proxy for ingredient substitutions, troubleshooting, and wine pairings, backed by local offline vector search.
 - 📷 **Vision Pantry & Recipe OCR:** Scan ingredient photos or raw recipe text directly into structured JSON.
-- 🗣️ **Hands-Free Cooking Mode:** Full-screen step-by-step guidance with Web Speech API voice control and timers.
-- 📊 **Flavor Profile Analytics:** Interactive radar/bar visualizer charting flavor balances (Sweet, Savory, Acid, Fat, Umami) across planned meals.
-- 📱 **Full Offline PWA:** Instant installability, Workbox caching, and offline state handling.
+- 📱 **Full Offline PWA:** Instant installability, Workbox caching, iOS Safari install prompts, and offline state handling.
 
 ---
 
@@ -23,11 +24,12 @@ Dinerforged is an AI-augmented Progressive Web App (PWA) designed for home cooks
 
 - **Frontend Framework:** React 18 + TypeScript + Vite
 - **Styling:** Tailwind CSS v3 (Custom culinary theme design system + Dark/Light mode)
-- **State Management:** Zustand (With `persist` middleware for LocalStorage)
+- **State Management:** Zustand (With `persist` middleware for LocalStorage & global timer store)
 - **Routing:** React Router v6
 - **PWA & Caching:** `vite-plugin-pwa` + Workbox
 - **Backend Infrastructure:** Netlify Serverless Functions (TypeScript)
 - **AI Engine:** OpenRouter / Groq Free APIs (`llama-3.3-70b-versatile`, `llama-3.2-11b-vision-instruct:free`) + Local Vector Search
+- **Voice / Audio APIs:** Web Speech API (TTS/STT) & Web Audio API (Chime Synthesizer)
 - **Icons:** Lucide React (`lucide-react`)
 
 ---
@@ -50,7 +52,6 @@ Dinerforged is an AI-augmented Progressive Web App (PWA) designed for home cooks
    ```bash
    npm install
 
-
 ![alt text](image.png) //Touch-Friendly Meal Planner Grid layout
 
 //Folder Structure:
@@ -59,7 +60,7 @@ dinerforged/
 ├── .github/
 │   └── workflows/
 │       └── ci.yml
-├── netlify/                      <-- Serverless backend directory
+├── netlify/
 │   └── functions/
 │       ├── ai-chef.ts            <-- OpenRouter / Groq proxy
 │       └── parse-recipe.ts       <-- Vision OCR parser
@@ -72,12 +73,17 @@ dinerforged/
 │   │   ├── common/
 │   │   │   └── OfflineBanner.tsx
 │   │   ├── layout/
+│   │   │   ├── MobileDrawer.tsx
 │   │   │   ├── MobileNav.tsx
 │   │   │   └── Navbar.tsx
+│   │   ├── modals/
+│   │   │   └── CloudSyncModal.tsx
 │   │   ├── planner/
 │   │   │   ├── FlavorAnalyticsWidget.tsx
 │   │   │   ├── PantryRouletteModal.tsx
 │   │   │   └── RecipePickerModal.tsx
+│   │   ├── pwa/
+│   │   │   └── IOSInstallPrompt.tsx
 │   │   ├── recipes/
 │   │   │   ├── CustomRecipeModal.tsx
 │   │   │   ├── HandsFreeCookingMode.tsx
@@ -85,6 +91,8 @@ dinerforged/
 │   │   │   └── ServingScaler.tsx
 │   │   ├── techniques/
 │   │   │   └── TechniqueCard.tsx
+│   │   ├── timers/
+│   │   │   └── SmartKitchenAssistant.tsx
 │   │   └── utensils/
 │   │       └── UtensilCard.tsx
 │   ├── data/
@@ -93,15 +101,21 @@ dinerforged/
 │   │   └── utensils.ts
 │   ├── hooks/
 │   │   ├── useOnlineStatus.ts
+│   │   ├── usePWAInstall.ts
+│   │   ├── useRecipeVoice.ts
 │   │   └── useTheme.ts
 │   ├── pages/
 │   │   ├── AIChefPage.tsx
+│   │   ├── FavoritesPage.tsx
 │   │   ├── MealPlannerPage.tsx
 │   │   ├── RecipesPage.tsx
 │   │   ├── ShoppingListPage.tsx
 │   │   └── TechniquesPage.tsx
+│   ├── services/
+│   │   └── googleDriveSync.ts
 │   ├── store/
-│   │   └── useAppStore.ts
+│   │   ├── useAppStore.ts
+│   │   └── useTimerStore.ts
 │   ├── types/
 │   │   └── index.ts
 │   └── utils/
