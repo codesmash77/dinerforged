@@ -11,6 +11,7 @@ import { AIChefPage } from './pages/AIChefPage';
 import { useTheme } from './hooks/useTheme';
 import { FavoritesPage } from './pages/FavoritesPage';
 import { IOSInstallPrompt } from './components/pwa/IOSInstallPrompt';
+import { SmartKitchenAssistant } from './components/timers/SmartKitchenAssistant';
 
 export const App: React.FC = () => {
   // Initialize dark mode class sync
@@ -23,7 +24,7 @@ export const App: React.FC = () => {
         <OfflineBanner />
 
         {/* Global Desktop Header Navigation */}
-        <Navbar /> <IOSInstallPrompt/>
+        <Navbar /> 
 
         {/* Primary Route Container */}
         <main className="flex-1">
@@ -39,7 +40,11 @@ export const App: React.FC = () => {
         </main>
 
         {/* Global Mobile Sticky Bottom Navigation */}
-        <MobileNav />
+        <MobileNav />\
+        {/* Global Floating Widgets & PWA Prompts */}
+        <SmartKitchenAssistant />
+        <IOSInstallPrompt />
+        
       </div>
     </BrowserRouter>
   );
