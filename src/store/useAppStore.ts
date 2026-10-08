@@ -35,8 +35,14 @@ interface AppState {
   updateCustomUtensil: (id: string, updatedFields: Partial<Utensil>) => void;
   deleteCustomUtensil: (id: string) => void;
 
-  purgeAndResetStorage: () => void;
-}
+        // Safe Purge: Only clears custom recipes and deleted IDs, leaving bookmarks & preferences intact!
+      purgeAndResetStorage: () => {
+        set({
+          customRecipes: [],
+          deletedRecipeIds: [],
+        });
+      },
+
 
 export const useAppStore = create<AppState>()(
   persist(
