@@ -11,39 +11,35 @@ import { smartScaleIngredients } from '../utils/smartScaler';
 import { findSmartSubstitute } from '../utils/vectorSearch';
 
 export const RecipesPage: React.FC = () => {
-  // 1. Pull customRecipes, deletedRecipeIds, and purge action from store
-  const customRecipes = useAppStore((state) => state.customRecipes);
+  const customRecipes = useAppStore((state) => state.customRecipes || []);
   const deletedRecipeIds = useAppStore((state) => state.deletedRecipeIds || []);
   const purgeAndResetStorage = useAppStore((state) => state.purgeAndResetStorage);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCuisine, setSelectedCuisine] = useState<string>('All');
 
-  // Modals & Active Selections
   const [activeRecipe, setActiveRecipe] = useState<Recipe | null>(null);
   const [recipeToEdit, setRecipeToEdit] = useState<Recipe | null>(null);
   const [isCustomModalOpen, setIsCustomModalOpen] = useState(false);
   const [isHandsFreeActive, setIsHandsFreeActive] = useState(false);
   const [currentServings, setCurrentServings] = useState<number>(4);
 
-  // 2. Combine seed and custom recipes, filtering out any deleted recipe IDs (Step 2)
+  // Combine seed and custom recipes, filtering out deleted ones
   const allRecipes = useMemo(() => {
     const combined = [...customRecipes, ...seedRecipes];
     return combined.filter((recipe) => !deletedRecipeIds.includes(recipe.id));
   }, [customRecipes, deletedRecipeIds]);
 
-  // Cuisine filter chips
   const cuisines = useMemo(() => {
-    const list = Array.from(new Set(allRecipes.map((r) => r.cuisine)));
+    const list = Array.from(new Set(allRecipes.map((r) => r.cuisine).filter(Boolean)));
     return ['All', 'Custom', ...list];
   }, [allRecipes]);
 
-  // Filtered recipe list
   const filteredRecipes = useMemo(() => {
     return allRecipes.filter((recipe) => {
       const matchesSearch =
         recipe.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        recipe.ingredients.some((i) => i.name.toLowerCase().includes(searchQuery.toLowerCase()));
+        (recipe.ingredients || []).some((i) => i.name.toLowerCase().includes(searchQuery.toLowerCase()));
 
       const matchesCuisine =
         selectedCuisine === 'All'
@@ -58,7 +54,7 @@ export const RecipesPage: React.FC = () => {
 
   const handleSelectRecipe = (recipe: Recipe) => {
     setActiveRecipe(recipe);
-    setCurrentServings(recipe.baseServings);
+    setCurrentServings(recipe.baseServings || 4);
   };
 
   const scaledIngredients = activeRecipe
@@ -67,7 +63,6 @@ export const RecipesPage: React.FC = () => {
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 pb-24">
-      {/* Page Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
         <div>
           <h1 className="text-3xl font-display font-bold text-slate-900 dark:text-white">
@@ -79,14 +74,13 @@ export const RecipesPage: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-3">
-          {/* Step 3: Optional Purge/Reset Stale Data Button */}
           <button
             onClick={() => {
-              if (window.confirm('Clear stale cache and reset workspace storage? Bookmarks will remain safe.')) {
+              if (window.confirm('Clear stale cache and reset workspace custom recipes? Bookmarks remain safe.')) {
                 purgeAndResetStorage();
               }
             }}
-            title="Purge corrupted state & reset storage"
+            title="Reset workspace storage"
             className="flex items-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 px-3 py-2.5 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
           >
             <RotateCcw className="h-3.5 w-3.5 text-red-400" /> Reset Stale Storage
@@ -101,7 +95,6 @@ export const RecipesPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Search & Cuisine Filter Bar */}
       <div className="flex flex-col md:flex-row gap-4 mb-8">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
@@ -131,7 +124,6 @@ export const RecipesPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Recipe Grid */}
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {filteredRecipes.map((recipe) => (
           <RecipeCard
@@ -143,7 +135,6 @@ export const RecipesPage: React.FC = () => {
         ))}
       </div>
 
-      {/* Recipe Details Modal */}
       {activeRecipe && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm overflow-y-auto">
           <div className="relative w-full max-w-3xl rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-slate-800 dark:bg-slate-900 my-8">
@@ -159,7 +150,7 @@ export const RecipesPage: React.FC = () => {
 
             <div className="mt-4 space-y-6 max-h-[70vh] overflow-y-auto pr-2">
               <ServingScaler
-                baseServings={activeRecipe.baseServings}
+                baseServings={activeRecipe.baseServings || 4}
                 currentServings={currentServings}
                 onServingsChange={setCurrentServings}
               />
@@ -189,7 +180,7 @@ export const RecipesPage: React.FC = () => {
               <div>
                 <h3 className="text-md font-bold text-slate-900 dark:text-white mb-3">Instructions</h3>
                 <ol className="space-y-3">
-                  {activeRecipe.instructions.map((step, idx) => (
+                  {(activeRecipe.instructions || []).map((step, idx) => (
                     <li key={idx} className="flex items-start gap-3 text-sm text-slate-700 dark:text-slate-300">
                       <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-culinary-500/20 text-xs font-bold text-culinary-600 dark:text-culinary-400">
                         {idx + 1}
