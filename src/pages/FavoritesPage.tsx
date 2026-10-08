@@ -1,18 +1,21 @@
 import React, { useState } from 'react';
-import { Bookmark, ChefHat, Search } from 'lucide-react';
+import { Bookmark, Search } from 'lucide-react';
 import { useAppStore } from '../store/useAppStore';
 import { RecipeCard } from '../components/recipes/RecipeCard';
 import { recipes as seedRecipes } from '../data/recipes';
 import { Recipe } from '../types';
 
 export const FavoritesPage: React.FC = () => {
-  const { savedRecipeIds, customRecipes } = useAppStore();
+  const { savedRecipeIds, customRecipes, deletedRecipeIds = [] } = useAppStore();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
 
-  const allRecipes = [...customRecipes, ...seedRecipes];
+  // Combine custom and seed recipes, filtering out deleted ones
+  const allRecipes = [...customRecipes, ...seedRecipes].filter(
+    (recipe) => !deletedRecipeIds.includes(recipe.id)
+  );
   
-  // Filter only bookmarked recipes
+  // Filter only bookmarked recipes matching the search query
   const bookmarkedRecipes = allRecipes.filter((recipe) => 
     savedRecipeIds.includes(recipe.id) &&
     (recipe.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
