@@ -3,54 +3,47 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import { Recipe, WeeklyPlan, Technique, Utensil } from '../types';
 
 interface AppState {
-  // Theme
   darkMode: boolean;
   toggleDarkMode: () => void;
 
-  // Custom Recipes Local CRUD
   customRecipes: Recipe[];
   addCustomRecipe: (recipe: Recipe) => void;
   updateCustomRecipe: (id: string, updatedFields: Partial<Recipe>) => void;
   deleteCustomRecipe: (id: string) => void;
 
-  // Saved Bookmarks
+  // Track deleted pre-populated or custom recipe IDs
+  deletedRecipeIds: string[];
+
   savedRecipeIds: string[];
   toggleSaveRecipe: (id: string) => void;
 
-  // Weekly Meal Planner
   weeklyPlan: WeeklyPlan;
   setMealPlanSlot: (day: keyof WeeklyPlan, mealType: 'breakfast' | 'lunch' | 'dinner', recipe?: Recipe) => void;
   clearWeeklyPlan: () => void;
 
-  // Shopping List Checklist State
   checkedShoppingItems: Record<string, boolean>;
   toggleShoppingItem: (id: string) => void;
   clearCheckedShoppingItems: () => void;
 
-  // Custom Techniques Local CRUD
   customTechniques: Technique[];
   addCustomTechnique: (technique: Technique) => void;
   updateCustomTechnique: (id: string, updatedFields: Partial<Technique>) => void;
   deleteCustomTechnique: (id: string) => void;
 
-  // Custom Utensils Local CRUD
   customUtensils: Utensil[];
   addCustomUtensil: (utensil: Utensil) => void;
   updateCustomUtensil: (id: string, updatedFields: Partial<Utensil>) => void;
   deleteCustomUtensil: (id: string) => void;
 
-  // Maintenance Utility to purge corrupted custom recipes while preserving bookmarks
-  purgeCorruptedRecipes: () => void;
+  purgeAndResetStorage: () => void;
 }
 
 export const useAppStore = create<AppState>()(
   persist(
     (set, get) => ({
-      // Theme
       darkMode: false,
       toggleDarkMode: () => set((state) => ({ darkMode: !state.darkMode })),
 
-      // Custom Recipes Local CRUD
       customRecipes: [],
       addCustomRecipe: (newRecipe) =>
         set((state) => ({
@@ -58,22 +51,25 @@ export const useAppStore = create<AppState>()(
             { ...newRecipe, id: newRecipe.id || `custom-${Date.now()}` },
             ...state.customRecipes.filter((r) => r.id !== newRecipe.id),
           ],
+          deletedRecipeIds: state.deletedRecipeIds.filter((id) => id !== newRecipe.id),
         })),
+
       updateCustomRecipe: (id, updatedFields) =>
         set((state) => ({
           customRecipes: state.customRecipes.map((r) =>
             r.id === id ? { ...r, ...updatedFields } : r
           ),
         })),
+
       deleteCustomRecipe: (id) =>
         set((state) => ({
-          // Removes from custom recipes, allowing pre-populated or custom items to be cleared
           customRecipes: state.customRecipes.filter((r) => r.id !== id),
-          // Also explicitly ensure bookmark IDs remain clean or intact as desired
+          deletedRecipeIds: [...new Set([...state.deletedRecipeIds, id])],
           savedRecipeIds: state.savedRecipeIds.filter((savedId) => savedId !== id),
         })),
 
-      // Saved Bookmarks (Protected during data purges)
+      deletedRecipeIds: [],
+
       savedRecipeIds: [],
       toggleSaveRecipe: (id) =>
         set((state) => ({
@@ -82,7 +78,6 @@ export const useAppStore = create<AppState>()(
             : [...state.savedRecipeIds, id],
         })),
 
-      // Weekly Meal Planner
       weeklyPlan: { mon: {}, tue: {}, wed: {}, thu: {}, fri: {}, sat: {}, sun: {} },
       setMealPlanSlot: (day, mealType, recipe) =>
         set((state) => ({
@@ -99,7 +94,6 @@ export const useAppStore = create<AppState>()(
           weeklyPlan: { mon: {}, tue: {}, wed: {}, thu: {}, fri: {}, sat: {}, sun: {} },
         }),
 
-      // Shopping List Checklist
       checkedShoppingItems: {},
       toggleShoppingItem: (id) =>
         set((state) => ({
@@ -110,7 +104,6 @@ export const useAppStore = create<AppState>()(
         })),
       clearCheckedShoppingItems: () => set({ checkedShoppingItems: {} }),
 
-      // Custom Techniques Local CRUD
       customTechniques: [],
       addCustomTechnique: (newTechnique) =>
         set((state) => ({
@@ -127,7 +120,6 @@ export const useAppStore = create<AppState>()(
           customTechniques: state.customTechniques.filter((t) => t.id !== id),
         })),
 
-      // Custom Utensils Local CRUD
       customUtensils: [],
       addCustomUtensil: (newUtensil) =>
         set((state) => ({
@@ -144,26 +136,28 @@ export const useAppStore = create<AppState>()(
           customUtensils: state.customUtensils.filter((u) => u.id !== id),
         })),
 
-      // Purge Corrupted Storage without touching saved bookmarks
-      purgeCorruptedRecipes: () => {
-        const state = get();
-        const validRecipes = (state.customRecipes || []).filter(
-          (r) => r && typeof r === 'object' && r.id && r.title && Array.isArray(r.ingredients)
-        );
-        set({ customRecipes: validRecipes });
+      purgeAndResetStorage: () => {
+        set({
+          customRecipes: [],
+          deletedRecipeIds: [],
+        });
+        localStorage.removeItem('dinerforged-v2-storage');
+        window.location.reload();
       },
     }),
     {
       name: 'dinerforged-v2-storage',
       storage: createJSONStorage(() => localStorage),
-      version: 2,
+      version: 3, // bumped to 3 to force clean state
       migrate: (persistedState: any, version) => {
-        if (version < 2) {
-          // Clean legacy or malformed recipe entries on migration while preserving saved bookmarks
+        if (version < 3) {
           if (persistedState && persistedState.customRecipes) {
             persistedState.customRecipes = persistedState.customRecipes.filter(
               (r: any) => r && typeof r === 'object' && r.id && r.title && Array.isArray(r.ingredients)
             );
+          }
+          if (!persistedState.deletedRecipeIds) {
+            persistedState.deletedRecipeIds = [];
           }
         }
         return persistedState as AppState;
