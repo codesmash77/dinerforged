@@ -16,13 +16,13 @@ export const Footer: React.FC = () => {
           <span className="text-slate-400">© {currentYear}</span>
           <span>•</span>
           <a
-            href="https://github.com/gokulrj" 
+            href="https://github.com/codesmash77" 
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1.5 font-medium hover:text-culinary-500 transition-colors"
           >
             <Github className="h-4 w-4" />
-            <span>gokulrj</span>
+            <span>codesmash77</span>
           </a>
         </div>
 
