@@ -10,6 +10,7 @@ import { TechniquesPage } from './pages/TechniquesPage';
 import { AIChefPage } from './pages/AIChefPage';
 import { useTheme } from './hooks/useTheme';
 import { FavoritesPage } from './pages/FavoritesPage';
+import { IOSInstallPrompt } from './components/pwa/IOSInstallPrompt';
 
 export const App: React.FC = () => {
   // Initialize dark mode class sync
@@ -22,7 +23,7 @@ export const App: React.FC = () => {
         <OfflineBanner />
 
         {/* Global Desktop Header Navigation */}
-        <Navbar />
+        <Navbar /> <IOSInstallPrompt/>
 
         {/* Primary Route Container */}
         <main className="flex-1">
