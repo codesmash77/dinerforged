@@ -76,7 +76,7 @@ export const RecipesPage: React.FC = () => {
         <div className="flex items-center gap-3">
           <button
             onClick={() => {
-              if (window.confirm('Clear stale cache and reset workspace custom recipes? Bookmarks won't remain safe!!')) {
+              if (window.confirm("Clear stale cache and reset workspace custom recipes? Bookmarks won't remain safe!!")) {
                 purgeAndResetStorage();
               }
             }}
